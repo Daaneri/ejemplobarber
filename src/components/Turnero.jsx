@@ -177,7 +177,7 @@ export default function Turnero() {
 
         {/* COLUMNA 3: FORMULARIO Y RESUMEN */}
         <div className="w-full md:w-1/4 p-8 flex flex-col">
-          <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-300 mb-6">Confirmación</h3>
+          <h3 className="font-black text-[10px] uppercase trhttps://accounts.google.com/SignOutOptions?hl=es&continue=https://gemini.google.com/app/8a5b68543f424439%3Fis_sa%3D1%26is_sa%3D1%26android-min-version%3D301356232%26ios-min-version%3D322.0%26campaign_id%3Dbkws%26utm_source%3Dsem%26utm_medium%3Dpaid-media%26utm_campaign%3Dbkws%26pt%3D9008%26mt%3D8%26ct%3Dp-growth-sem-bkws%26gclsrc%3Daw.ds%26gad_source%3D1%26gad_campaignid%3D20437330752%26gbraid%3D0AAAAApk5BhlmS9tfPUHHfjDKNmWTXumkD%26gclid%3DCj0KCQjw77bPBhC_ARIsAGAjjV_LKCSnIiywCFjonJdVvS6VARkxDkBEuLpW6GiYi3Mwb1-6s4MsnzYaAg9tEALw_wcB&ec=GBRAkgUacking-widest text-slate-300 mb-6">Confirmación</h3>
           
           <div className="mb-8">
             <p className="font-extrabold text-xl leading-tight">Corte General</p>
