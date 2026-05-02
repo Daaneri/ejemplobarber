@@ -3,11 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
+ "scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "lint": "eslint .",
+  "preview": "vite preview --host 0.0.0.0 --port 4173"
+},
   "dependencies": {
     "@supabase/supabase-js": "^2.38.4",
     "lucide-react": "^1.14.0",
