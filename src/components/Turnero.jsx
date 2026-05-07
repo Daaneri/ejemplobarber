@@ -6,11 +6,11 @@ const HORARIOS = ["09:00", "09:30", "10:00", "10:30", "11:00", "12:40", "14:00",
 
 export default function Turnero() {
   const [appointments, setAppointments] = useState([]);
-  const [myAppointments, setMyAppointments] = useState([]); // Nuevo estado para mis turnos
+  const [myAppointments, setMyAppointments] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [form, setForm] = useState({ name: '', phone: '' });
-  const [searchPhone, setSearchPhone] = useState(''); // Estado para el buscador
+  const [searchPhone, setSearchPhone] = useState('');
   
   const getLocalDateString = (date) => {
     const offset = date.getTimezoneOffset();
@@ -26,7 +26,7 @@ export default function Turnero() {
       .channel('cambios-turnos')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
         getAppointments();
-        if (searchPhone) fetchMyAppointments(searchPhone); // Actualizar lista personal si hay búsqueda activa
+        if (searchPhone) fetchMyAppointments(searchPhone);
       })
       .subscribe();
     return () => supabase.removeChannel(channel);
@@ -37,14 +37,15 @@ export default function Turnero() {
     setAppointments(data || []);
   }
 
-  // NUEVA FUNCIÓN: Ver mis turnos
   async function fetchMyAppointments(phone) {
-    if (!phone) return;
+    if (!phone || phone.length < 8) {
+      setMyAppointments([]);
+      return;
+    }
     const { data, error } = await supabase
       .from('appointments')
       .select('*')
-      .eq('telefono', phone)
-      .gte('fecha', new Date().toISOString().split('T')[0]) // Solo turnos de hoy en adelante
+      .eq('telefono', phone.trim())
       .order('fecha', { ascending: true });
     
     if (!error) setMyAppointments(data || []);
@@ -58,7 +59,7 @@ export default function Turnero() {
     if (!error) {
       alert("¡Turno reservado!");
       setSelectedSlot(null);
-      setForm({ ...form, name: '' }); // Limpiamos nombre pero dejamos el cel para comodidad
+      setForm({ ...form, name: '' });
       getAppointments();
     }
   };
@@ -177,32 +178,8 @@ export default function Turnero() {
 
         {/* COLUMNA 3: FORMULARIO Y RESUMEN */}
         <div className="w-full md:w-1/4 p-8 flex flex-col">
-          <h3 className="font-black text-[10px] uppercase trhttps://accounts.google.com/SignOutOptions?hl=es&continue=https://gemini.google.com/app/8a5b68543f424439%3Fis_sa%3D1%26is_sa%3D1%26android-min-version%3D301356232%26ios-min-version%3D322.0%26campaign_id%3Dbkws%26utm_source%3Dsem%26utm_medium%3Dpaid-media%26utm_campaign%3Dbkws%26pt%3D9008%26mt%3D8%26ct%3Dp-growth-sem-bkws%26gclsrc%3Daw.ds%26gad_source%3D1%26gad_campaignid%3D20437330752%26gbraid%3D0AAAAApk5BhlmS9tfPUHHfjDKNmWTXumkD%26gclid%3DCj0KCQjw77bPBhC_ARIsAGAjjV_LKCSnIiywCFjonJdVvS6VARkxDkBEuLpW6GiYi3Mwb1-6s4MsnzYaAg9tEALw_wcB&ec=GBRAkgUacking-widest text-slate-300 mb-6">Confirmación</h3>
+          <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-300 mb-6">Confirmación</h3>
           
           <div className="mb-8">
             <p className="font-extrabold text-xl leading-tight">Corte General</p>
-            <p className="text-xs text-indigo-500 font-bold uppercase">{selectedDate.getDate()} Mayo, 2026</p>
-            <p className="text-sm font-bold mt-1 text-slate-900">{selectedSlot || '--:--'} hs</p>
-          </div>
-
-          <div className={`space-y-3 ${selectedSlot ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
-            <input type="text" placeholder="Nombre" className="w-full bg-slate-50 p-3 rounded-xl text-xs border border-slate-100 outline-none" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-            <input type="tel" placeholder="WhatsApp" className="w-full bg-slate-50 p-3 rounded-xl text-xs border border-slate-100 outline-none" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-            <button onClick={handleReserve} className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-100 active:scale-95 transition-all">RESERVAR</button>
-          </div>
-
-          <div className="mt-auto pt-8 border-t border-slate-50 flex flex-col gap-4 text-[10px]">
-            <div className="flex gap-3 text-slate-400">
-              <MapPin className="w-3 h-3 shrink-0" />
-              <p>Villa Constitución, Santa Fe</p>
-            </div>
-            <a href="https://wa.me/543416909040" className="flex gap-3 items-center text-green-500 font-black uppercase">
-              <MessageCircle className="w-4 h-4" />
-              WhatsApp de la Barbería
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+            <p className="text-xs text-
