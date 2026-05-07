@@ -182,4 +182,28 @@ export default function Turnero() {
           
           <div className="mb-8">
             <p className="font-extrabold text-xl leading-tight">Corte General</p>
-            <p className="text-xs text-
+            <p className="text-xs text-indigo-500 font-bold uppercase">{selectedDate.getDate()} Mayo, 2026</p>
+            <p className="text-sm font-bold mt-1 text-slate-900">{selectedSlot || '--:--'} hs</p>
+          </div>
+
+          <div className={`space-y-3 ${selectedSlot ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+            <input type="text" placeholder="Nombre" className="w-full bg-slate-50 p-3 rounded-xl text-xs border border-slate-100 outline-none" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+            <input type="tel" placeholder="WhatsApp" className="w-full bg-slate-50 p-3 rounded-xl text-xs border border-slate-100 outline-none" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+            <button onClick={handleReserve} className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-100 active:scale-95 transition-all">RESERVAR</button>
+          </div>
+
+          <div className="mt-auto pt-8 border-t border-slate-50 flex flex-col gap-4 text-[10px]">
+            <div className="flex gap-3 text-slate-400">
+              <MapPin className="w-3 h-3 shrink-0" />
+              <p>Villa Constitución, Santa Fe</p>
+            </div>
+            <a href="https://wa.me/543416909040" className="flex gap-3 items-center text-green-500 font-black uppercase">
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp de la Barbería
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
