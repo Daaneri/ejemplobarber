@@ -23,7 +23,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
 
   // CONFIGURACIÓN: Cambiá esta clave por la que le darás al barbero
-  const MASTER_PASSWORD = 'tu_clave_aca'; 
+  const MASTER_PASSWORD = 'barbero22'; 
 
   const handleLogin = (e) => {
     e.preventDefault();
