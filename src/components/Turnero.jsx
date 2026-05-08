@@ -267,7 +267,7 @@ export default function Turnero() {
           </div>
         </div>
 
-        {/* FOOTER REINTEGRADO */}
+        {/* FOOTER ACTUALIZADO */}
         <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 px-6 text-center md:text-left">
           <div>
             <h4 className="text-xl font-black text-slate-900 lowercase italic tracking-tighter">
@@ -281,14 +281,10 @@ export default function Turnero() {
             <p className="text-[10px] text-slate-400 font-medium tracking-tight">
               © 2026 — ejemplo.barber
             </p>
-            <a 
-              href="https://github.com/Daaneri" 
-              target="_blank" 
-              rel="noreferrer"
-              className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic hover:text-indigo-600 transition-colors inline-block"
-            >
-              SaaS by Daaneri
-            </a>
+            {/* CAMBIO AQUÍ: Etiqueta span y nuevo texto estático */}
+            <span className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic inline-block">
+              EliteWar Soft
+            </span>
           </div>
         </footer>
       </div>

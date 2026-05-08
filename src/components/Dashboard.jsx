@@ -46,7 +46,6 @@ export default function AdminPanel() {
   async function fetchConfig() {
     try {
       const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
-      // Quitamos el .order('id') por si no existe esa columna, usamos el orden natural o por día
       const { data: hor, error: horError } = await supabase.from('configuracion_horarios').select('*');
       
       if (horError) console.error("Error en Supabase:", horError.message);
@@ -301,7 +300,8 @@ export default function AdminPanel() {
           </div>
           <div className="text-center md:text-right">
              <p className="text-[10px] text-slate-400 font-medium tracking-tight">© 2026 — ejemplo.barber</p>
-             <p className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic">SaaS by Daaneri</p>
+             {/* CAMBIO: EliteWar Soft como texto estático */}
+             <p className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic">EliteWar Soft</p>
           </div>
         </footer>
       </div>
