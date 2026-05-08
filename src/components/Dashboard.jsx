@@ -49,6 +49,14 @@ export default function AdminPanel() {
     setHorarios(hor || []);
   }
 
+  // Cálculo de caja real basado en los precios actuales de los servicios
+  const calcularCaja = () => {
+    return appointments.reduce((acc, apt) => {
+      const servicioEncontrado = servicios.find(s => s.nombre === apt.servicio);
+      return acc + (servicioEncontrado ? servicioEncontrado.precio : 0);
+    }, 0);
+  };
+
   const handleUpdatePrice = async (id, nuevoPrecio) => {
     const { error } = await supabase.from('servicios').update({ precio: parseInt(nuevoPrecio) }).eq('id', id);
     if (!error) {
@@ -98,7 +106,6 @@ export default function AdminPanel() {
     <div className="min-h-screen bg-slate-100 p-2 md:p-10 font-sans text-slate-800">
       <div className="max-w-6xl mx-auto">
         
-        {/* NAVEGACIÓN Y HEADER */}
         <header className="flex flex-col md:flex-row items-center justify-between mb-8 px-6">
           <div>
             <h1 className="text-5xl font-black text-slate-900 tracking-tighter lowercase italic">admin<span className="text-indigo-600">.barber</span></h1>
@@ -119,7 +126,6 @@ export default function AdminPanel() {
         </header>
 
         {activeTab === 'agenda' ? (
-          /* PESTAÑA: AGENDA */
           <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
              <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50/50 border-r border-slate-100">
                 <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-2">
@@ -127,31 +133,26 @@ export default function AdminPanel() {
                 </h3>
                 <div className="space-y-4 mb-8">
                    <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-                      <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest relative z-10">Turnos Confirmados</p>
+                      <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest relative z-10">Turnos Hoy</p>
                       <div className="text-4xl font-black text-slate-900 relative z-10">{appointments.length}</div>
                       <Users className="w-8 h-8 text-indigo-50 absolute right-6 bottom-6 group-hover:scale-110 transition-transform" />
                    </div>
                    <div className="bg-indigo-600 p-6 rounded-[2rem] shadow-lg shadow-indigo-100 text-white relative overflow-hidden">
                       <p className="text-[10px] font-black opacity-70 uppercase tracking-widest">Caja Estimada</p>
-                      <div className="text-3xl font-black italic">$ {(appointments.length * 10000).toLocaleString()}</div>
+                      <div className="text-3xl font-black italic">$ {calcularCaja().toLocaleString()}</div>
                       <TrendingUp className="w-12 h-12 absolute -right-2 -bottom-2 opacity-10" />
                    </div>
                 </div>
-                <div className="mt-auto bg-white border-2 border-dashed border-slate-200 p-6 rounded-[2rem]">
-                   <p className="text-[10px] font-bold text-slate-400 uppercase text-center leading-relaxed">
-                      Villa Constitución<br/>
-                      <span className="text-slate-900 font-black italic lowercase tracking-tighter text-sm">daaneri.dev</span>
-                   </p>
-                </div>
              </div>
+             
              <div className="w-full md:w-3/4 p-6 md:p-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-slate-800">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {loading ? (
                     <div className="col-span-full py-20 text-center text-4xl font-black text-slate-100 italic animate-pulse tracking-tighter">Cargando...</div>
                   ) : appointments.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-100 rounded-[3rem]">
                        <Clock className="w-12 h-12 text-slate-100 mb-4" />
-                       <p className="text-slate-300 font-black uppercase text-xs tracking-widest">Sin turnos agendados</p>
+                       <p className="text-slate-300 font-black uppercase text-xs tracking-widest">Sin turnos para esta fecha</p>
                     </div>
                   ) : appointments.map((apt) => (
                     <div key={apt.id} className="bg-slate-50/50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl hover:border-indigo-100 transition-all">
@@ -178,8 +179,7 @@ export default function AdminPanel() {
              </div>
           </div>
         ) : (
-          /* PESTAÑA: CONFIGURACIÓN */
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500 pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
               <div className="flex items-center gap-3 mb-8">
                 <div className="bg-indigo-50 p-3 rounded-2xl"><Scissors className="text-indigo-600 w-6 h-6" /></div>
@@ -187,7 +187,7 @@ export default function AdminPanel() {
               </div>
               <div className="space-y-4">
                 {servicios.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-100 transition-all">
+                  <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <p className="font-black text-xs uppercase text-slate-900">{s.nombre}</p>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-slate-400">$</span>
@@ -202,6 +202,7 @@ export default function AdminPanel() {
                 ))}
               </div>
             </div>
+            
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
               <div className="flex items-center gap-3 mb-8">
                 <div className="bg-indigo-50 p-3 rounded-2xl"><Clock className="text-indigo-600 w-6 h-6" /></div>
@@ -212,26 +213,27 @@ export default function AdminPanel() {
                   <div key={h.dia} className="flex items-center justify-between p-3 px-5 bg-slate-50 rounded-xl">
                     <span className="text-xs font-black uppercase text-slate-700 tracking-tighter">{h.dia}</span>
                     <div className="flex items-center gap-3">
-                      <input type="text" defaultValue={h.apertura.substring(0,5)} className="w-16 bg-white border border-slate-200 rounded-lg p-1 text-[10px] font-bold text-center outline-none focus:ring-2 ring-indigo-100" />
-                      <span className="text-[10px] font-black text-slate-300 uppercase">A</span>
-                      <input type="text" defaultValue={h.cierre.substring(0,5)} className="w-16 bg-white border border-slate-200 rounded-lg p-1 text-[10px] font-bold text-center outline-none focus:ring-2 ring-indigo-100" />
+                      <span className={`text-[9px] font-black px-2 py-1 rounded-md ${h.activo ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                        {h.activo ? 'ACTIVO' : 'CERRADO'}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">{h.apertura.substring(0,5)} a {h.cierre.substring(0,5)}</span>
                     </div>
                   </div>
                 ))}
               </div>
-              <button onClick={() => Swal.fire({title: 'Horarios Guardados', icon: 'success', customClass: {popup: 'rounded-3xl'}})} className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl mt-8 shadow-lg hover:bg-black transition-all active:scale-95 text-xs tracking-widest uppercase">Guardar Cambios</button>
+              <p className="mt-6 text-[9px] text-slate-400 italic text-center uppercase font-bold tracking-widest">Para modificar días de apertura, usá el Dashboard de Supabase</p>
             </div>
           </div>
         )}
 
-        <footer className="mt-12 pb-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4 px-6 border-t border-slate-200 pt-8">
+        <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 px-6 text-center md:text-left">
           <div>
              <h4 className="text-xl font-black text-slate-900 lowercase italic">admin<span className="text-indigo-600">.barber</span></h4>
-             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Control Total de Agenda • Real-Time</p>
+             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Control Real-Time • Villa Constitución</p>
           </div>
           <div className="text-center md:text-right">
-             <p className="text-[10px] text-slate-400 font-medium tracking-tight">© 2026 ejemplo.barber — Villa Constitución, Santa Fe.</p>
-             <p className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic">SaaS Desarrollado por Daaneri</p>
+             <p className="text-[10px] text-slate-400 font-medium tracking-tight">© 2026 — ejemplo.barber</p>
+             <p className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic">SaaS by Daaneri</p>
           </div>
         </footer>
       </div>
