@@ -234,7 +234,7 @@ export default function Turnero() {
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3330.4192661853483!2d-60.33158962431102!3d-33.34710187342939!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c6d1d369a05%3A0x7d6f5f3e3e3e3e3e!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1715180000000!5m2!1ses-419!2sar" 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3330.449764835691!2d-60.33446!3d-33.2269!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzPCsDEzJzM2LjgiUyA2MMKwMjAnMDQuMSJX!5e0!3m2!1ses-419!2sar!4v1715000000000!5m2!1ses-419!2sar" 
                   allowFullScreen="" 
                   loading="lazy"
                   className="grayscale group-hover:grayscale-0 transition-all duration-500"
@@ -266,6 +266,31 @@ export default function Turnero() {
             </div>
           </div>
         </div>
+
+        {/* FOOTER REINTEGRADO */}
+        <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 px-6 text-center md:text-left">
+          <div>
+            <h4 className="text-xl font-black text-slate-900 lowercase italic tracking-tighter">
+              ejemplo<span className="text-indigo-600">.barber</span>
+            </h4>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+              Turnos Online • Villa Constitución
+            </p>
+          </div>
+          <div className="text-center md:text-right">
+            <p className="text-[10px] text-slate-400 font-medium tracking-tight">
+              © 2026 — ejemplo.barber
+            </p>
+            <a 
+              href="https://github.com/Daaneri" 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic hover:text-indigo-600 transition-colors inline-block"
+            >
+              SaaS by Daaneri
+            </a>
+          </div>
+        </footer>
       </div>
     </div>
   );
