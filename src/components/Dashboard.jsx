@@ -24,7 +24,7 @@ export default function AdminPanel() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
 
-  const MASTER_PASSWORD = 'tu_clave_aca'; 
+  const MASTER_PASSWORD = 'barbero22'; 
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -161,9 +161,10 @@ export default function AdminPanel() {
             </h3>
 
             <div className="space-y-4 mb-8">
-               <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Turnos Totales</p>
-                  <div className="text-4xl font-black text-slate-900">{appointments.length}</div>
+               <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest relative z-10">Turnos Totales</p>
+                  <div className="text-4xl font-black text-slate-900 relative z-10">{appointments.length}</div>
+                  <Users className="w-8 h-8 text-indigo-50 absolute right-6 bottom-6 group-hover:scale-110 transition-transform" />
                </div>
 
                <div className="bg-indigo-600 p-6 rounded-[2rem] shadow-lg shadow-indigo-100 text-white">
