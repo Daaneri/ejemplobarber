@@ -56,10 +56,14 @@ export default function AdminPanel() {
   }
 
   async function fetchConfig() {
-    const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
-    const { data: hor } = await supabase.from('configuracion_horarios').select('*').order('id', { ascending: true });
-    setServicios(srv || []);
-    setHorarios(hor || []);
+    try {
+      const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
+      const { data: hor } = await supabase.from('configuracion_horarios').select('*').order('id', { ascending: true });
+      setServicios(srv || []);
+      setHorarios(hor || []);
+    } catch (error) {
+      console.error("Error cargando configuración:", error);
+    }
   }
 
   const handleHorarioChange = (dia, campo, valor) => {
@@ -70,18 +74,22 @@ export default function AdminPanel() {
     setIsSaving(true);
     try {
       const promises = horarios.map(h => 
-        supabase.from('configuracion_horarios').update({ apertura: h.apertura, cierre: h.cierre, activo: h.activo }).eq('dia', h.dia)
+        supabase.from('configuracion_horarios').update({ 
+          apertura: h.apertura, 
+          cierre: h.cierre, 
+          activo: h.activo 
+        }).eq('dia', h.dia)
       );
       await Promise.all(promises);
       Swal.fire({ 
         title: '¡Configuración Actualizada!', 
-        text: 'Los clientes ya pueden ver los nuevos cambios.',
+        text: 'Los cambios ya están en vivo.',
         icon: 'success', 
         confirmButtonColor: '#4f46e5',
         customClass: { popup: 'rounded-[2.5rem]' }
       });
     } catch (error) {
-      Swal.fire('Error', 'No se pudo conectar con la base de datos', 'error');
+      Swal.fire('Error', 'No se pudo guardar la configuración', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -236,30 +244,62 @@ export default function AdminPanel() {
               </div>
             </div>
             
-            {/* HORARIOS */}
+            {/* HORARIOS CORREGIDO */}
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col">
               <div className="flex items-center gap-3 mb-8">
                 <div className="bg-indigo-50 p-3 rounded-2xl"><Clock className="text-indigo-600 w-6 h-6" /></div>
-                <div><h3 className="font-black text-lg uppercase">Horarios Abierto</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Disponibilidad semanal</p></div>
+                <div>
+                  <h3 className="font-black text-lg uppercase">Horarios Abierto</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Disponibilidad semanal</p>
+                </div>
               </div>
+              
               <div className="space-y-3 flex-1">
-                {horarios.map((h) => (
-                  <div key={h.dia} className="flex items-center justify-between p-3 px-5 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 transition-all">
-                    <span className="text-[11px] font-black uppercase text-slate-700 w-20 tracking-tighter">{h.dia}</span>
-                    <div className="flex items-center gap-2">
-                      <input type="text" value={h.apertura.substring(0,5)} onChange={(e) => handleHorarioChange(h.dia, 'apertura', e.target.value)} className="w-14 bg-white border border-slate-200 rounded-lg p-2 text-[10px] font-black text-center outline-none focus:ring-2 ring-indigo-100" />
-                      <span className="text-[8px] font-black text-slate-300">A</span>
-                      <input type="text" value={h.cierre.substring(0,5)} onChange={(e) => handleHorarioChange(h.dia, 'cierre', e.target.value)} className="w-14 bg-white border border-slate-200 rounded-lg p-2 text-[10px] font-black text-center outline-none focus:ring-2 ring-indigo-100" />
-                      <button onClick={() => handleHorarioChange(h.dia, 'activo', !h.activo)} className={`ml-2 p-2 rounded-lg transition-all ${h.activo ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-400'}`}>
-                        {h.activo ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                      </button>
+                {horarios.length > 0 ? (
+                  horarios.map((h) => (
+                    <div key={h.dia} className="flex items-center justify-between p-3 px-5 bg-slate-50 rounded-xl border border-transparent hover:border-slate-200 transition-all">
+                      <span className="text-[11px] font-black uppercase text-slate-700 w-20 tracking-tighter">{h.dia}</span>
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="text" 
+                          value={h.apertura ? h.apertura.substring(0,5) : "09:00"} 
+                          onChange={(e) => handleHorarioChange(h.dia, 'apertura', e.target.value)} 
+                          className="w-16 bg-white border border-slate-200 rounded-lg p-2 text-[10px] font-black text-center outline-none focus:ring-2 ring-indigo-100" 
+                        />
+                        <span className="text-[8px] font-black text-slate-300">A</span>
+                        <input 
+                          type="text" 
+                          value={h.cierre ? h.cierre.substring(0,5) : "20:00"} 
+                          onChange={(e) => handleHorarioChange(h.dia, 'cierre', e.target.value)} 
+                          className="w-16 bg-white border border-slate-200 rounded-lg p-2 text-[10px] font-black text-center outline-none focus:ring-2 ring-indigo-100" 
+                        />
+                        <button 
+                          onClick={() => handleHorarioChange(h.dia, 'activo', !h.activo)} 
+                          className={`ml-2 p-2 rounded-lg transition-all ${h.activo ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-400'}`}
+                        >
+                          {h.activo ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="py-10 text-center text-slate-300 font-bold text-xs uppercase animate-pulse italic">
+                    Cargando horarios de la base de datos...
                   </div>
-                ))}
+                )}
               </div>
-              <button onClick={saveAllChanges} disabled={isSaving} className={`w-full ${isSaving ? 'bg-slate-400' : 'bg-slate-900 hover:bg-black'} text-white font-black py-5 rounded-2xl mt-8 shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3`}>
+
+              <button 
+                onClick={saveAllChanges} 
+                disabled={isSaving || horarios.length === 0} 
+                className={`w-full ${isSaving || horarios.length === 0 ? 'bg-slate-300' : 'bg-slate-900 hover:bg-black'} text-white font-black py-5 rounded-2xl mt-8 shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3`}
+              >
                 <Save className="w-4 h-4" /> {isSaving ? 'GUARDANDO...' : 'GUARDAR CONFIGURACIÓN'}
               </button>
+              
+              <p className="text-[9px] font-black text-slate-300 text-center mt-6 uppercase tracking-widest italic">
+                Para modificar días de apertura, usá el dashboard de Supabase
+              </p>
             </div>
           </div>
         )}
