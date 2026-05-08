@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Turnero from './components/Turnero.jsx'; 
-import AdminPanel from './components/AdminPanel'; 
+import AdminPanel from './components/Dashboard'; // Cambiamos la ruta pero mantenemos el nombre del componente
 
 function App() {
   return (
@@ -16,4 +16,4 @@ function App() {
   );
 }
 
-export default App;
+export default App; // Deploy forzado 1
