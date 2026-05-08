@@ -16,4 +16,4 @@ function App() {
   );
 }
 
-export default App; // Deploy forzado 1
+export default App;
