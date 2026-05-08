@@ -10,6 +10,7 @@ import {
   Smartphone
 } from 'lucide-react';
 
+// AGREGAMOS DEFAULT AQUÍ PARA SOLUCIONAR EL ERROR DE VERCEL
 export default function Turnero() {
   const [appointments, setAppointments] = useState([]);
   const [myAppointments, setMyAppointments] = useState([]);
@@ -58,7 +59,8 @@ export default function Turnero() {
     setServicios(srv || []);
     if (srv?.length > 0) setSelectedService(srv[0]);
 
-    const { data: hor } = await supabase.from('configuracion_horarios').select('*');
+    // Traemos los horarios ordenados para que no fallen al cargar
+    const { data: hor } = await supabase.from('configuracion_horarios').select('*').order('id', { ascending: true });
     setConfigHorarios(hor || []);
   }
 
@@ -145,7 +147,6 @@ export default function Turnero() {
 
         <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[750px]">
           
-          {/* PASO 1 Y 2 */}
           <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50/50 border-r border-slate-100">
             <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-6">Paso 1: Servicio</h3>
             <div className="space-y-2 mb-8">
@@ -184,7 +185,6 @@ export default function Turnero() {
             </div>
           </div>
 
-          {/* COLUMNA CENTRAL: CALENDARIO */}
           <div className="w-full md:w-2/4 p-6 md:p-10">
             <header className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic">
@@ -220,21 +220,19 @@ export default function Turnero() {
             </div>
           </div>
 
-          {/* COLUMNA DERECHA: MAPA Y TURNOS */}
           <div className="w-full md:w-1/4 flex flex-col border-l border-slate-100 bg-white">
             <div className="p-6">
               <a href="https://wa.me/543400000000" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-500 text-white font-black uppercase text-[10px] py-5 rounded-2xl shadow-lg hover:bg-green-600 transition-all">
                 <MessageCircle className="w-5 h-5" /> WhatsApp Barbería
               </a>
               
-              {/* MAPA REAL VILLA CONSTITUCIÓN */}
               <div className="mt-6 h-[180px] w-full rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner relative group">
                 <iframe 
                   title="mapa-villa"
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3330.4192661853483!2d-60.33158962431102!3d-33.34710187342939!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c6d1d369a05%3A0x7d6f5f3e3e3e3e3e!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1715180000000!5m2!1ses-419!2sar" 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3334.398031548651!2d-60.329241524314115!3d-33.23237937347648!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c483f94572b%3A0x6b42911b33b00693!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses!2sar!4v1713456789012!5m2!1ses!2sar" 
                   allowFullScreen="" 
                   loading="lazy"
                   className="grayscale group-hover:grayscale-0 transition-all duration-500"
