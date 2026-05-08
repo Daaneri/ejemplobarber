@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from "../supabaseClient";
 import Swal from 'sweetalert2';
-import { 
-  MessageCircle, 
-  Lock, 
-  Search, 
-  XCircle, 
-  CheckCircle, 
-  Smartphone 
-} from 'lucide-react';
+import { MessageCircle, Lock, Search, XCircle, CheckCircle, Smartphone } from 'lucide-react';
 
 const HORARIOS = ["09:00", "09:30", "10:00", "10:30", "11:00", "12:40", "14:00", "16:00", "17:20", "18:00", "19:20"];
 const SERVICIOS = [
@@ -68,12 +61,7 @@ export default function Turnero() {
 
   const handleReserve = async () => {
     if (!form.name || !form.phone || !selectedSlot) {
-      return Swal.fire({
-        title: '¡Ups!',
-        text: 'Completá tu nombre y WhatsApp para reservar.',
-        icon: 'warning',
-        confirmButtonColor: '#4f46e5'
-      });
+      return Swal.fire({ title: '¡Ups!', text: 'Por favor completá todos los datos y seleccioná un horario.', icon: 'warning', confirmButtonColor: '#4f46e5' });
     }
 
     const { error } = await supabase.from('appointments').insert([{ 
@@ -85,29 +73,29 @@ export default function Turnero() {
     }]);
 
     if (!error) {
-      const mensaje = `Hola! Soy ${form.name}. Reservé: ${selectedService.nombre} para el ${selectedDate.getDate()} a las ${selectedSlot}hs.`;
-      
+      // ÉXITO: Alerta profesional y NO redirige a WhatsApp
       Swal.fire({
-        title: 'ejemplo.barber',
-        text: '¡Turno reservado con éxito!',
+        title: '¡Reserva Exitosa!',
+        text: `Tu turno para ${selectedService.nombre} el día ${selectedDate.getDate()} a las ${selectedSlot}hs ha sido agendado.`,
         icon: 'success',
-        confirmButtonText: 'Aceptar',
+        confirmButtonText: 'Genial',
         confirmButtonColor: '#4f46e5',
         customClass: { popup: 'rounded-[2rem]' }
-      }).then(() => {
-        window.open(`https://wa.me/1111111111?text=${encodeURIComponent(mensaje)}`, '_blank');
       });
 
+      // Limpiar campos para nueva reserva
       setSelectedSlot(null);
       setForm({ name: '', phone: '' });
       getAppointments();
+    } else {
+      Swal.fire('Error', 'No se pudo agendar el turno. Intentá de nuevo.', 'error');
     }
   };
 
   const handleCancel = async (id) => {
     const result = await Swal.fire({
       title: '¿Cancelar turno?',
-      text: "Esta acción no se puede deshacer",
+      text: "Esta acción liberará el horario.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
@@ -119,7 +107,7 @@ export default function Turnero() {
     if (result.isConfirmed) {
       const { error } = await supabase.from('appointments').delete().eq('id', id);
       if (!error) {
-        Swal.fire('Eliminado', 'Tu turno fue cancelado.', 'success');
+        Swal.fire('Cancelado', 'El turno ha sido eliminado.', 'success');
         getAppointments();
         fetchMyAppointments(searchPhone);
       }
@@ -160,7 +148,8 @@ export default function Turnero() {
               ))}
             </div>
 
-            <div className={`space-y-3 transition-all ${selectedSlot ? 'opacity-100' : 'opacity-20 pointer-events-none'}`}>
+            {/* INPUTS AHORA SIEMPRE ACTIVOS */}
+            <div className="space-y-3 transition-all">
               <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-300 mb-4">Paso 2: Tus Datos</h3>
               <input type="text" placeholder="Tu Nombre" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               <input type="tel" placeholder="Tu WhatsApp" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
@@ -168,10 +157,21 @@ export default function Turnero() {
               <div className="bg-white border-2 border-dashed border-slate-200 p-4 rounded-2xl mt-4">
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Resumen de reserva</p>
                 <div className="text-2xl font-black text-slate-900">${selectedService.precio.toLocaleString()}</div>
-                <p className="text-[9px] text-slate-400 mt-1 italic">* El pago se abona en el local.</p>
+                <p className="text-[9px] text-slate-400 mt-1 italic">
+                  {selectedSlot ? `Hora: ${selectedSlot} hs` : "* Seleccioná un horario en el calendario"}
+                </p>
               </div>
 
-              <button onClick={handleReserve} className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all">
+              {/* EL BOTÓN SOLO SE ACTIVA SI TIENE TODO CARGADO */}
+              <button 
+                onClick={handleReserve} 
+                disabled={!form.name || !form.phone || !selectedSlot}
+                className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all ${
+                  (!form.name || !form.phone || !selectedSlot) 
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                  : 'bg-slate-900 text-white active:scale-95 hover:bg-black'
+                }`}
+              >
                 CONFIRMAR TURNO
               </button>
             </div>
@@ -210,14 +210,14 @@ export default function Turnero() {
           {/* COLUMNA DERECHA: WHATSAPP, MAPA Y TURNOS */}
           <div className="w-full md:w-1/4 flex flex-col border-l border-slate-100">
             <div className="p-4 bg-white">
-              <a href="https://wa.me/1111111111" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-500 text-white font-black uppercase text-[10px] py-4 rounded-2xl shadow-lg hover:bg-green-600 transition-all">
+              <a href="https://wa.me/1111111111" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-50 text-green-600 border border-green-100 font-black uppercase text-[10px] py-4 rounded-2xl hover:bg-green-100 transition-all">
                 <MessageCircle className="w-4 h-4" /> WhatsApp Barbería
               </a>
             </div>
 
             <div className="h-[200px] w-full px-4 mb-4">
               <div className="w-full h-full rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner grayscale hover:grayscale-0 transition-all">
-                <iframe title="map" width="100%" height="100%" frameBorder="0" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3334.56789!2d-60.328!3d-33.226!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b769!2sVilla+Constitución!5e0!3m2!1ses!2sar!4v1" allowFullScreen></iframe>
+                <iframe title="map" width="100%" height="100%" frameBorder="0" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13346.757829761664!2d-60.3344605!3d-33.2255855!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c4664245663%3A0x6280436d4f68686e!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses!2sar!4v1715130000000!5m2!1ses!2sar" allowFullScreen></iframe>
               </div>
             </div>
 
@@ -231,7 +231,7 @@ export default function Turnero() {
               </div>
               <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
                 {myAppointments.map(apt => (
-                  <div key={apt.id} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm relative group animate-in slide-in-from-bottom-2">
+                  <div key={apt.id} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm relative group">
                     <p className="text-[8px] font-black text-indigo-500 uppercase">{apt.fecha.split('-').reverse().join('/')}</p>
                     <p className="font-bold text-xs">{apt.hora.substring(0,5)} hs</p>
                     <p className="text-[9px] text-slate-400 truncate pr-6">{apt.servicio}</p>
@@ -245,9 +245,9 @@ export default function Turnero() {
           </div>
         </div>
 
-        {/* FOOTER PROFESIONAL */}
-        <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-6 px-6">
-          <div className="text-center md:text-left">
+        {/* FOOTER */}
+        <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-6 px-6 text-center md:text-left">
+          <div>
             <h4 className="text-xl font-black text-slate-900 lowercase italic">
               ejemplo<span className="text-indigo-600">.barber</span>
             </h4>
@@ -255,13 +255,9 @@ export default function Turnero() {
               Estilo y Precisión en cada corte
             </p>
           </div>
-          <div className="flex flex-col items-center md:items-end gap-2 text-center md:text-right">
-            <p className="text-[10px] text-slate-400 font-medium">
-              © 2026 ejemplo.barber — Villa Constitución, Santa Fe.
-            </p>
-            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-tighter">
-              Desarrollado por Daaneri
-            </p>
+          <div className="text-center md:text-right">
+            <p className="text-[10px] text-slate-400 font-medium italic">© 2026 ejemplo.barber — Villa Constitución, Santa Fe.</p>
+            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-tighter mt-1">Desarrollado por Daaneri</p>
           </div>
         </footer>
       </div>
