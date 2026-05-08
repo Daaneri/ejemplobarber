@@ -58,7 +58,7 @@ export default function Turnero() {
     setServicios(srv || []);
     if (srv?.length > 0) setSelectedService(srv[0]);
 
-    const { data: hor } = await supabase.from('configuracion_horarios').select('*').order('id', { ascending: true });
+    const { data: hor } = await supabase.from('configuracion_horarios').select('*');
     setConfigHorarios(hor || []);
   }
 
@@ -127,6 +127,7 @@ export default function Turnero() {
   return (
     <div className="min-h-screen bg-slate-100 p-2 md:p-10 font-sans text-slate-800">
       <div className="max-w-6xl mx-auto">
+        
         <header className="flex flex-col md:flex-row items-center justify-between mb-8 px-6">
           <div className="text-center md:text-left">
             <h1 className="text-5xl font-black text-slate-900 tracking-tighter lowercase italic">
@@ -143,6 +144,8 @@ export default function Turnero() {
         </header>
 
         <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[750px]">
+          
+          {/* PASO 1 Y 2 */}
           <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50/50 border-r border-slate-100">
             <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-6">Paso 1: Servicio</h3>
             <div className="space-y-2 mb-8">
@@ -167,10 +170,21 @@ export default function Turnero() {
                 </p>
               </div>
 
-              <button onClick={handleReserve} disabled={!form.name || !form.phone || !selectedSlot} className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all mt-4 ${(!form.name || !form.phone || !selectedSlot) ? 'bg-slate-200 text-slate-400' : 'bg-slate-900 text-white active:scale-95 hover:bg-black'}`}>RESERVAR AHORA</button>
+              <button 
+                onClick={handleReserve} 
+                disabled={!form.name || !form.phone || !selectedSlot}
+                className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all mt-4 ${
+                  (!form.name || !form.phone || !selectedSlot) 
+                  ? 'bg-slate-200 text-slate-400' 
+                  : 'bg-slate-900 text-white active:scale-95 hover:bg-black'
+                }`}
+              >
+                RESERVAR AHORA
+              </button>
             </div>
           </div>
 
+          {/* COLUMNA CENTRAL: CALENDARIO */}
           <div className="w-full md:w-2/4 p-6 md:p-10">
             <header className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic">
@@ -206,9 +220,26 @@ export default function Turnero() {
             </div>
           </div>
 
+          {/* COLUMNA DERECHA: MAPA Y TURNOS */}
           <div className="w-full md:w-1/4 flex flex-col border-l border-slate-100 bg-white">
             <div className="p-6">
-              <a href="https://wa.me/543400000000" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-500 text-white font-black uppercase text-[10px] py-5 rounded-2xl shadow-lg hover:bg-green-600 transition-all"><MessageCircle className="w-5 h-5" /> WhatsApp Barbería</a>
+              <a href="https://wa.me/543400000000" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-500 text-white font-black uppercase text-[10px] py-5 rounded-2xl shadow-lg hover:bg-green-600 transition-all">
+                <MessageCircle className="w-5 h-5" /> WhatsApp Barbería
+              </a>
+              
+              {/* MAPA REAL VILLA CONSTITUCIÓN */}
+              <div className="mt-6 h-[180px] w-full rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner relative group">
+                <iframe 
+                  title="mapa-villa"
+                  width="100%" 
+                  height="100%" 
+                  style={{ border: 0 }} 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3330.4192661853483!2d-60.33158962431102!3d-33.34710187342939!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c6d1d369a05%3A0x7d6f5f3e3e3e3e3e!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1715180000000!5m2!1ses-419!2sar" 
+                  allowFullScreen="" 
+                  loading="lazy"
+                  className="grayscale group-hover:grayscale-0 transition-all duration-500"
+                ></iframe>
+              </div>
               <div className="mt-4 flex items-start gap-3 text-slate-400 px-2">
                 <MapPin className="w-4 h-4 text-indigo-600 mt-1" />
                 <p className="text-[10px] font-bold leading-relaxed uppercase">Av. San Martín 1234<br/>Villa Constitución, SF</p>
@@ -216,8 +247,11 @@ export default function Turnero() {
             </div>
 
             <div className="flex-1 bg-slate-50 p-6 rounded-t-[3rem] border-t border-slate-100 mt-4">
-              <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-900 mb-4 flex items-center gap-2"><Search className="w-3 h-3 text-indigo-600" /> Mis Reservas</h3>
+              <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-900 mb-4 flex items-center gap-2">
+                <Search className="w-3 h-3 text-indigo-600" /> Mis Reservas
+              </h3>
               <input type="tel" placeholder="Tu WhatsApp..." className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-[10px] outline-none focus:ring-2 ring-indigo-100 mb-4 font-bold" value={searchPhone} onChange={(e) => { setSearchPhone(e.target.value); fetchMyAppointments(e.target.value); }} />
+              
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {myAppointments.map(apt => (
                   <div key={apt.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
