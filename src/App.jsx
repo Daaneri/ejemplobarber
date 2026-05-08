@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Turnero from './components/Turnero.jsx'; 
-import AdminPanel from './components/AdminPanel.jsx'; 
+import AdminPanel from './components/AdminPanel'; 
 
 function App() {
   return (
