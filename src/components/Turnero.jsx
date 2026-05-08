@@ -61,7 +61,7 @@ export default function Turnero() {
 
   const handleReserve = async () => {
     if (!form.name || !form.phone || !selectedSlot) {
-      return Swal.fire({ title: '¡Ups!', text: 'Por favor completá todos los datos y seleccioná un horario.', icon: 'warning', confirmButtonColor: '#4f46e5' });
+      return Swal.fire({ title: '¡Ups!', text: 'Por favor completá todos los datos.', icon: 'warning', confirmButtonColor: '#4f46e5' });
     }
 
     const { error } = await supabase.from('appointments').insert([{ 
@@ -73,44 +73,18 @@ export default function Turnero() {
     }]);
 
     if (!error) {
-      // ÉXITO: Alerta profesional y NO redirige a WhatsApp
       Swal.fire({
-        title: '¡Reserva Exitosa!',
-        text: `Tu turno para ${selectedService.nombre} el día ${selectedDate.getDate()} a las ${selectedSlot}hs ha sido agendado.`,
+        title: '¡Reserva Confirmada!',
+        text: `Te esperamos el día ${selectedDate.getDate()} a las ${selectedSlot}hs.`,
         icon: 'success',
-        confirmButtonText: 'Genial',
+        confirmButtonText: 'Cerrar',
         confirmButtonColor: '#4f46e5',
         customClass: { popup: 'rounded-[2rem]' }
       });
 
-      // Limpiar campos para nueva reserva
       setSelectedSlot(null);
       setForm({ name: '', phone: '' });
       getAppointments();
-    } else {
-      Swal.fire('Error', 'No se pudo agendar el turno. Intentá de nuevo.', 'error');
-    }
-  };
-
-  const handleCancel = async (id) => {
-    const result = await Swal.fire({
-      title: '¿Cancelar turno?',
-      text: "Esta acción liberará el horario.",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#cbd5e1',
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'Volver'
-    });
-
-    if (result.isConfirmed) {
-      const { error } = await supabase.from('appointments').delete().eq('id', id);
-      if (!error) {
-        Swal.fire('Cancelado', 'El turno ha sido eliminado.', 'success');
-        getAppointments();
-        fetchMyAppointments(searchPhone);
-      }
     }
   };
 
@@ -136,9 +110,12 @@ export default function Turnero() {
 
         <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[750px]">
           
-          {/* COLUMNA IZQUIERDA: SERVICIOS Y DATOS */}
+          {/* COLUMNA IZQUIERDA */}
           <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50/50 border-r border-slate-100">
-            <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-300 mb-6">Paso 1: Servicio</h3>
+            
+            {/* TÍTULOS EN VIOLETA/NEGRO DESTACADO */}
+            <h3 className="font-black text-[11px] uppercase tracking-widest text-indigo-600 mb-6">Paso 1: Servicio</h3>
+            
             <div className="space-y-2 mb-8">
               {SERVICIOS.map(s => (
                 <button key={s.id} onClick={() => setSelectedService(s)} className={`w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${selectedService.id === s.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200 hover:border-indigo-300'}`}>
@@ -148,21 +125,20 @@ export default function Turnero() {
               ))}
             </div>
 
-            {/* INPUTS AHORA SIEMPRE ACTIVOS */}
-            <div className="space-y-3 transition-all">
-              <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-300 mb-4">Paso 2: Tus Datos</h3>
-              <input type="text" placeholder="Tu Nombre" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-              <input type="tel" placeholder="Tu WhatsApp" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+            <div className="space-y-3">
+              <h3 className="font-black text-[11px] uppercase tracking-widest text-indigo-600 mb-4">Paso 2: Tus Datos</h3>
+              
+              <input type="text" placeholder="Tu Nombre" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100 placeholder:text-slate-300" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+              <input type="tel" placeholder="Tu WhatsApp" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100 placeholder:text-slate-300" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
               
               <div className="bg-white border-2 border-dashed border-slate-200 p-4 rounded-2xl mt-4">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Resumen de reserva</p>
-                <div className="text-2xl font-black text-slate-900">${selectedService.precio.toLocaleString()}</div>
-                <p className="text-[9px] text-slate-400 mt-1 italic">
-                  {selectedSlot ? `Hora: ${selectedSlot} hs` : "* Seleccioná un horario en el calendario"}
+                <p className="text-[10px] font-bold text-slate-900 uppercase">Resumen de reserva</p>
+                <div className="text-2xl font-black text-indigo-600">${selectedService.precio.toLocaleString()}</div>
+                <p className="text-[9px] text-slate-500 mt-1 italic">
+                  {selectedSlot ? `Hora: ${selectedSlot} hs` : "* Elegí un horario en el centro"}
                 </p>
               </div>
 
-              {/* EL BOTÓN SOLO SE ACTIVA SI TIENE TODO CARGADO */}
               <button 
                 onClick={handleReserve} 
                 disabled={!form.name || !form.phone || !selectedSlot}
@@ -177,7 +153,7 @@ export default function Turnero() {
             </div>
           </div>
 
-          {/* COLUMNA CENTRAL: CALENDARIO */}
+          {/* COLUMNA CENTRAL */}
           <div className="w-full md:w-2/4 p-6 md:p-10">
             <header className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-bold">Mayo <span className="text-slate-300 font-light">2026</span></h2>
@@ -194,20 +170,15 @@ export default function Turnero() {
               {HORARIOS.map(h => {
                 const apt = appointments.find(a => a.hora && a.hora.startsWith(h));
                 const isPast = isTimeSlotPast(h);
-                const isSelected = selectedSlot === h;
-
                 if (loading) return <div key={h} className="h-14 bg-slate-100 animate-pulse rounded-xl"></div>;
-
                 return (
-                  <button key={h} disabled={!!apt || isPast} onClick={() => setSelectedSlot(h)} className={`py-4 rounded-xl text-xs font-black transition-all border relative ${apt ? 'bg-red-50 border-red-100 text-red-200 cursor-not-allowed' : isPast ? 'bg-slate-50 border-slate-100 text-slate-200 cursor-not-allowed' : isSelected ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-green-50 border-green-100 text-green-600 hover:scale-105'}`}>
-                    {h} {apt && <Lock className="w-3 h-3 absolute top-1 right-1 opacity-20" />}
-                  </button>
+                  <button key={h} disabled={!!apt || isPast} onClick={() => setSelectedSlot(h)} className={`py-4 rounded-xl text-xs font-black transition-all border ${apt ? 'bg-red-50 text-red-200 cursor-not-allowed' : isPast ? 'bg-slate-50 text-slate-200 cursor-not-allowed' : selectedSlot === h ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-green-50 text-green-600 hover:scale-105'}`}>{h}</button>
                 );
               })}
             </div>
           </div>
 
-          {/* COLUMNA DERECHA: WHATSAPP, MAPA Y TURNOS */}
+          {/* COLUMNA DERECHA */}
           <div className="w-full md:w-1/4 flex flex-col border-l border-slate-100">
             <div className="p-4 bg-white">
               <a href="https://wa.me/1111111111" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-50 text-green-600 border border-green-100 font-black uppercase text-[10px] py-4 rounded-2xl hover:bg-green-100 transition-all">
@@ -217,12 +188,12 @@ export default function Turnero() {
 
             <div className="h-[200px] w-full px-4 mb-4">
               <div className="w-full h-full rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner grayscale hover:grayscale-0 transition-all">
-                <iframe title="map" width="100%" height="100%" frameBorder="0" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13346.757829761664!2d-60.3344605!3d-33.2255855!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c4664245663%3A0x6280436d4f68686e!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses!2sar!4v1715130000000!5m2!1ses!2sar" allowFullScreen></iframe>
+                <iframe title="map" width="100%" height="100%" frameBorder="0" src="http://googleusercontent.com/maps.google.com/6" allowFullScreen></iframe>
               </div>
             </div>
 
             <div className="flex-1 bg-slate-50 p-6 rounded-t-[2.5rem] border-t border-slate-100">
-              <h3 className="font-bold text-[10px] uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+              <h3 className="font-bold text-[10px] uppercase tracking-widest text-indigo-600 mb-4 flex items-center gap-2">
                 <CheckCircle className="w-3 h-3" /> Mis Reservas
               </h3>
               <div className="relative mb-4">
@@ -231,11 +202,11 @@ export default function Turnero() {
               </div>
               <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
                 {myAppointments.map(apt => (
-                  <div key={apt.id} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm relative group">
+                  <div key={apt.id} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm relative group animate-in slide-in-from-bottom-2">
                     <p className="text-[8px] font-black text-indigo-500 uppercase">{apt.fecha.split('-').reverse().join('/')}</p>
                     <p className="font-bold text-xs">{apt.hora.substring(0,5)} hs</p>
                     <p className="text-[9px] text-slate-400 truncate pr-6">{apt.servicio}</p>
-                    <button onClick={() => handleCancel(apt.id)} className="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
+                    <button onClick={() => {}} className="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
                       <XCircle className="w-4 h-4" />
                     </button>
                   </div>
@@ -246,18 +217,18 @@ export default function Turnero() {
         </div>
 
         {/* FOOTER */}
-        <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-6 px-6 text-center md:text-left">
-          <div>
+        <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-6 px-6">
+          <div className="text-center md:text-left">
             <h4 className="text-xl font-black text-slate-900 lowercase italic">
               ejemplo<span className="text-indigo-600">.barber</span>
             </h4>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+            <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest mt-1">
               Estilo y Precisión en cada corte
             </p>
           </div>
           <div className="text-center md:text-right">
             <p className="text-[10px] text-slate-400 font-medium italic">© 2026 ejemplo.barber — Villa Constitución, Santa Fe.</p>
-            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-tighter mt-1">Desarrollado por Daaneri</p>
+            <p className="text-[9px] text-slate-900 font-bold uppercase tracking-tighter mt-1">Desarrollado por Daaneri</p>
           </div>
         </footer>
       </div>
