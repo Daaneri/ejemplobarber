@@ -1,15 +1,15 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Turnero from './components/Turnero'; // Tu archivo principal
-import AdminPanel from './components/AdminPanel'; // El archivo nuevo
+import Turnero from './components/Turnero.jsx'; 
+import AdminPanel from './components/AdminPanel.jsx'; 
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Esta es la ruta que ya tenías para los clientes */}
+        {/* Ruta para los clientes de Villa Constitución */}
         <Route path="/" element={<Turnero />} />
         
-        {/* ESTA ES LA RUTA QUE TENÉS QUE AGREGAR PARA EL BARBERO */}
+        {/* Ruta privada para el barbero */}
         <Route path="/admin" element={<AdminPanel />} />
       </Routes>
     </Router>
