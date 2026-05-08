@@ -214,4 +214,11 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <footer className="fixed bottom-0 w-full bg-white/80 backdrop-blur-
+      <footer className="fixed bottom-0 w-full bg-white/80 backdrop-blur-md border-t border-slate-100 p-4 text-center">
+         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+           Villa Constitución • <span className="text-slate-900 font-black tracking-tighter italic lowercase">daaneri.dev</span>
+         </p>
+      </footer>
+    </div>
+  );
+}
