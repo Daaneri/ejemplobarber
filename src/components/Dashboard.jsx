@@ -15,7 +15,7 @@ export default function AdminPanel() {
   const [horarios, setHorarios] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false); // Estado para el botón de guardado
+  const [isSaving, setIsSaving] = useState(false);
 
   const MASTER_PASSWORD = 'barbero22'; 
 
@@ -44,13 +44,19 @@ export default function AdminPanel() {
   }
 
   async function fetchConfig() {
-    const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
-    const { data: hor } = await supabase.from('configuracion_horarios').select('*').order('id', { ascending: true });
-    setServicios(srv || []);
-    setHorarios(hor || []);
-  }
+    try {
+      const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
+      // Quitamos el .order('id') por si no existe esa columna, usamos el orden natural o por día
+      const { data: hor, error: horError } = await supabase.from('configuracion_horarios').select('*');
+      
+      if (horError) console.error("Error en Supabase:", horError.message);
 
-  // --- NUEVAS FUNCIONES DE LOGICA ---
+      setServicios(srv || []);
+      setHorarios(hor || []);
+    } catch (err) {
+      console.error("Error inesperado:", err);
+    }
+  }
 
   const handleHorarioChange = (dia, campo, valor) => {
     setHorarios(prev => prev.map(h => 
@@ -75,12 +81,14 @@ export default function AdminPanel() {
       await Promise.all(promises);
       
       Swal.fire({ 
-        title: '¡Configuración Actualizada!', 
+        title: '¡Configuración Guardada!', 
+        text: 'Los cambios ya están en la web de turnos.',
         icon: 'success', 
         confirmButtonColor: '#4f46e5',
         customClass: { popup: 'rounded-[2rem]' }
       });
     } catch (error) {
+      console.error(error);
       Swal.fire('Error', 'No se pudieron guardar los cambios', 'error');
     } finally {
       setIsSaving(false);
@@ -142,7 +150,6 @@ export default function AdminPanel() {
   return (
     <div className="min-h-screen bg-slate-100 p-2 md:p-10 font-sans text-slate-800">
       <div className="max-w-6xl mx-auto">
-        
         <header className="flex flex-col md:flex-row items-center justify-between mb-8 px-6">
           <div>
             <h1 className="text-5xl font-black text-slate-900 tracking-tighter lowercase italic">admin<span className="text-indigo-600">.barber</span></h1>
@@ -217,7 +224,6 @@ export default function AdminPanel() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">
-            {/* PANEL DE SERVICIOS */}
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
               <div className="flex items-center gap-3 mb-8">
                 <div className="bg-indigo-50 p-3 rounded-2xl"><Scissors className="text-indigo-600 w-6 h-6" /></div>
@@ -241,32 +247,29 @@ export default function AdminPanel() {
               </div>
             </div>
             
-            {/* PANEL DE HORARIOS CON GUARDADO HABILITADO */}
             <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col">
               <div className="flex items-center gap-3 mb-8">
                 <div className="bg-indigo-50 p-3 rounded-2xl"><Clock className="text-indigo-600 w-6 h-6" /></div>
                 <div><h3 className="font-black text-lg uppercase">Horarios Abierto</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Disponibilidad semanal</p></div>
               </div>
               <div className="space-y-3 flex-1">
-                {horarios.map((h) => (
+                {horarios.length > 0 ? horarios.map((h) => (
                   <div key={h.dia} className="flex items-center justify-between p-3 px-5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all group">
                     <span className="text-xs font-black uppercase text-slate-700 tracking-tighter w-20">{h.dia}</span>
                     <div className="flex items-center gap-2">
-                      {/* Inputs Editables */}
                       <input 
                         type="text" 
-                        value={h.apertura.substring(0, 5)} 
+                        value={h.apertura ? h.apertura.substring(0, 5) : '09:00'} 
                         onChange={(e) => handleHorarioChange(h.dia, 'apertura', e.target.value)}
                         className="w-14 bg-white border border-slate-200 rounded-lg p-1.5 text-[10px] font-black text-center outline-none focus:ring-2 ring-indigo-100"
                       />
                       <span className="text-[8px] font-black text-slate-300">A</span>
                       <input 
                         type="text" 
-                        value={h.cierre.substring(0, 5)} 
+                        value={h.cierre ? h.cierre.substring(0, 5) : '20:00'} 
                         onChange={(e) => handleHorarioChange(h.dia, 'cierre', e.target.value)}
                         className="w-14 bg-white border border-slate-200 rounded-lg p-1.5 text-[10px] font-black text-center outline-none focus:ring-2 ring-indigo-100"
                       />
-                      {/* Botón de Activo/Inactivo */}
                       <button 
                         onClick={() => handleHorarioChange(h.dia, 'activo', !h.activo)}
                         className={`ml-2 p-2 rounded-lg transition-all ${h.activo ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}
@@ -275,10 +278,11 @@ export default function AdminPanel() {
                       </button>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-center text-slate-300 py-10 font-black uppercase text-[10px] tracking-widest">Cargando horarios...</p>
+                )}
               </div>
 
-              {/* BOTÓN DE GUARDADO PRINCIPAL */}
               <button 
                 onClick={saveAllChanges}
                 disabled={isSaving}
@@ -286,8 +290,6 @@ export default function AdminPanel() {
               >
                 <Save className="w-5 h-5" /> {isSaving ? 'GUARDANDO...' : 'GUARDAR CONFIGURACIÓN'}
               </button>
-
-              <p className="mt-6 text-[9px] text-slate-400 italic text-center uppercase font-bold tracking-widest">Los cambios se aplicarán inmediatamente al sitio de turnos</p>
             </div>
           </div>
         )}
