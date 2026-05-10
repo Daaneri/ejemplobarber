@@ -18,7 +18,6 @@ export default function Turnero() {
   const [selectedService, setSelectedService] = useState(null);
   const [form, setForm] = useState({ name: '', phone: '' });
   const [searchPhone, setSearchPhone] = useState('');
-  const [loading, setLoading] = useState(true);
 
   const getLocalDateString = (date) => {
     const offset = date.getTimezoneOffset();
@@ -40,8 +39,7 @@ export default function Turnero() {
     const now = new Date();
     const slotDate = new Date();
     slotDate.setHours(hour, minutes, 0, 0);
-    const margin = 30 * 60 * 1000; 
-    return now.getTime() > (slotDate.getTime() - margin);
+    return now.getTime() > (slotDate.getTime() - (30 * 60 * 1000));
   };
 
   useEffect(() => {
@@ -61,10 +59,8 @@ export default function Turnero() {
   }
 
   async function getAppointments() {
-    setLoading(true);
     const { data } = await supabase.from('appointments').select('*').eq('fecha', dateString);
     setAppointments(data || []);
-    setLoading(false);
   }
 
   const generateSlots = () => {
@@ -72,16 +68,13 @@ export default function Turnero() {
     const config = configHorarios.find(h => h.dia === diaActual);
     if (!config || !config.activo) return [];
     const slots = [];
-    const addRange = (inicioStr, finStr) => {
-      if (!inicioStr || !finStr) return;
-      let [hInicio, mInicio] = inicioStr.split(':').map(Number);
-      let [hFin, mFin] = finStr.split(':').map(Number);
+    const addRange = (inicio, fin) => {
+      if (!inicio || !fin) return;
+      let [hInicio, mInicio] = inicio.split(':').map(Number);
+      let [hFin, mFin] = fin.split(':').map(Number);
       let actual = hInicio * 60 + mInicio;
-      const limite = hFin * 60 + mFin;
-      while (actual < limite) {
-        const h = Math.floor(actual / 60);
-        const m = actual % 60;
-        slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+      while (actual < (hFin * 60 + mFin)) {
+        slots.push(`${Math.floor(actual / 60).toString().padStart(2, '0')}:${(actual % 60).toString().padStart(2, '0')}`);
         actual += 30; 
       }
     };
@@ -96,31 +89,8 @@ export default function Turnero() {
     setMyAppointments(data || []);
   }
 
-  const handleCancelAppointment = async (id) => {
-    const confirm = await Swal.fire({
-      title: '¿Anular reserva?',
-      text: "El horario quedará libre para otra persona.",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'No'
-    });
-    if (confirm.isConfirmed) {
-      const { error } = await supabase.from('appointments').delete().eq('id', id);
-      if (!error) {
-        Swal.fire('Cancelado', 'Tu turno fue eliminado.', 'success');
-        fetchMyAppointments(searchPhone);
-        getAppointments();
-      }
-    }
-  };
-
   const handleReserve = async () => {
-    if (!form.name || !form.phone || !selectedSlot) {
-      return Swal.fire({ title: '¡Faltan datos!', text: 'Por favor completá tu nombre, celu y elegí un horario.', icon: 'warning', confirmButtonColor: '#4f46e5' });
-    }
+    if (!form.name || !form.phone || !selectedSlot) return;
     const { error } = await supabase.from('appointments').insert([{ 
       cliente: form.name, 
       telefono: form.phone.trim(), 
@@ -129,7 +99,7 @@ export default function Turnero() {
       servicio: selectedService.nombre 
     }]);
     if (!error) {
-      Swal.fire({ title: '¡Reserva Confirmada!', text: `Tu turno para ${selectedService.nombre} a las ${selectedSlot}hs fue agendado.`, icon: 'success', confirmButtonText: 'Genial', confirmButtonColor: '#4f46e5' });
+      Swal.fire({ title: '¡Listo!', icon: 'success', confirmButtonColor: '#4f46e5' });
       setSelectedSlot(null);
       getAppointments();
     }
@@ -138,82 +108,63 @@ export default function Turnero() {
   const currentSlots = generateSlots();
 
   return (
-    <div className="min-h-screen bg-slate-100 p-2 md:p-10 font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-100 p-4 md:p-10 font-sans">
+      {/* ESTILO PARA LA BARRA DE DESPLAZAMIENTO VIOLETA */}
+      <style>{`
+        .barra-dias::-webkit-scrollbar { height: 8px; }
+        .barra-dias::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .barra-dias::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+      `}</style>
+
       <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row items-center justify-between mb-8 px-6">
-          <div className="text-center md:text-left">
-            <h1 className="text-5xl font-black text-slate-900 tracking-tighter lowercase italic">
-              ejemplo<span className="text-indigo-600">.barber</span>
-            </h1>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">
-              Villa Constitución • Santa Fe
-            </p>
-          </div>
-          <div className="hidden md:flex bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-200 items-center gap-2">
-            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-bold uppercase">Sistema Activo</span>
-          </div>
+        <header className="flex justify-between items-center mb-8 px-4">
+          <h1 className="text-4xl font-black text-slate-900 italic lowercase">
+            ejemplo<span className="text-indigo-600">.barber</span>
+          </h1>
         </header>
 
-        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[750px]">
-          <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50/50 border-r border-slate-100">
-            <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-6">Paso 1: Servicio</h3>
+        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[700px]">
+          {/* Paso 1 y 2 */}
+          <div className="w-full md:w-1/4 p-8 bg-slate-50/50 border-r border-slate-100">
+            <h3 className="text-[10px] font-black uppercase tracking-widest mb-6 italic">Paso 1: Servicio</h3>
             <div className="space-y-2 mb-8">
               {servicios.map(s => (
-                <button key={s.id} onClick={() => setSelectedService(s)} className={`w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${selectedService?.id === s.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200 hover:border-indigo-300'}`}>
+                <button key={s.id} onClick={() => setSelectedService(s)} className={`w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${selectedService?.id === s.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200'}`}>
                   <span className="text-xs font-bold">{s.nombre}</span>
-                  <span className="text-[10px] font-bold opacity-80">${s.precio.toLocaleString()}</span>
+                  <span className="text-[10px] font-bold opacity-80">${s.precio}</span>
                 </button>
               ))}
             </div>
-            <div className="space-y-3">
-              <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-4">Paso 2: Tus Datos</h3>
-              <input type="text" placeholder="Tu Nombre" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-              <input type="tel" placeholder="Tu WhatsApp" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-              <div className="bg-white border-2 border-dashed border-slate-200 p-4 rounded-2xl mt-4">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Resumen</p>
-                <div className="text-2xl font-black text-indigo-600">${selectedService?.precio.toLocaleString()}</div>
-                <p className="text-[9px] text-slate-500 mt-1 italic font-medium">{selectedSlot ? `Horario: ${selectedSlot} hs` : "* Elegí un horario"}</p>
-              </div>
-              <button onClick={handleReserve} disabled={!form.name || !form.phone || !selectedSlot} className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all mt-4 ${(!form.name || !form.phone || !selectedSlot) ? 'bg-slate-200 text-slate-400' : 'bg-slate-900 text-white active:scale-95 hover:bg-black'}`}>
-                RESERVAR AHORA
-              </button>
-            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 italic">Paso 2: Tus Datos</h3>
+            <input type="text" placeholder="Nombre" className="w-full p-4 rounded-2xl border text-xs mb-2 outline-none focus:ring-2 ring-indigo-100" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+            <input type="tel" placeholder="WhatsApp" className="w-full p-4 rounded-2xl border text-xs outline-none focus:ring-2 ring-indigo-100" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+            <button onClick={handleReserve} className="w-full mt-6 bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-black">RESERVAR</button>
           </div>
 
-          <div className="w-full md:w-2/4 p-6 md:p-10">
-            <header className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic">
-                {selectedDate.toLocaleDateString('es-ES', { month: 'long' })} <span className="text-indigo-600">{selectedDate.getFullYear()}</span>
-              </h2>
-            </header>
+          {/* Columna Central: Turnos */}
+          <div className="w-full md:w-2/4 p-8">
+            <h2 className="text-2xl font-black mb-6 uppercase italic tracking-tighter">
+              {selectedDate.toLocaleDateString('es-ES', { month: 'long' })} <span className="text-indigo-600">{selectedDate.getFullYear()}</span>
+            </h2>
             
-            {/* SELECTOR DE DÍAS */}
-            <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-              {Array.from({ length: 14 }, (_, i) => {
-                const d = new Date();
-                d.setDate(d.getDate() + i);
+            {/* BARRA PARA CORRER DÍAS (VIOLETA) */}
+            <div className="flex gap-2 overflow-x-auto pb-4 mb-10 barra-dias">
+              {Array.from({ length: 21 }, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() + i);
                 return (
-                  <button key={i} onClick={() => setSelectedDate(d)} className={`min-w-[55px] py-4 rounded-2xl text-sm flex flex-col items-center transition-all ${getLocalDateString(selectedDate) === getLocalDateString(d) ? 'bg-slate-900 text-white shadow-xl scale-105' : 'bg-white text-slate-400 border border-slate-100 hover:bg-slate-50'}`}>
-                    <span className="text-[8px] font-black uppercase mb-1 opacity-60">{getDayName(d).substring(0,3)}</span>
+                  <button key={i} onClick={() => setSelectedDate(d)} className={`min-w-[60px] py-5 rounded-2xl text-xs flex flex-col items-center transition-all ${getLocalDateString(selectedDate) === getLocalDateString(d) ? 'bg-slate-900 text-white shadow-xl scale-105' : 'bg-white border hover:bg-slate-50'}`}>
+                    <span className="opacity-60 mb-1 font-bold uppercase text-[8px]">{getDayName(d).substring(0,3)}</span>
                     <span className="font-black text-base">{d.getDate()}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* BARRA VIOLETA (Antes dorada) */}
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-10">
-              <div className="h-full bg-indigo-600 w-1/3"></div>
-            </div>
-
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-900 mb-4 italic">Horarios Disponibles</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 italic">Horarios Disponibles</h3>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {currentSlots.length === 0 ? (
-                <div className="col-span-full py-10 text-center bg-red-50 rounded-[2rem] border border-red-100">
-                  <p className="text-red-400 font-black text-xs uppercase tracking-widest">Cerrado este día</p>
-                </div>
+                <div className="col-span-full py-10 text-center bg-red-50 rounded-2xl border border-red-100 text-red-400 font-bold uppercase text-xs tracking-widest">Cerrado</div>
               ) : currentSlots.map(h => {
                 const apt = appointments.find(a => a.hora && a.hora.startsWith(h));
                 const isPast = isTimeSlotPast(h);
@@ -223,13 +174,10 @@ export default function Turnero() {
                     disabled={!!apt || isPast} 
                     onClick={() => setSelectedSlot(h)} 
                     className={`py-5 rounded-2xl text-base font-black transition-all border ${
-                      apt 
-                        ? 'bg-red-100 text-red-500 border-red-200 cursor-not-allowed opacity-60' 
-                        : isPast 
-                          ? 'bg-slate-50 text-slate-300 border-transparent cursor-not-allowed' 
-                          : selectedSlot === h 
-                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg scale-105' 
-                            : 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:border-emerald-300'
+                      apt ? 'bg-red-50 text-red-200 border-red-50 cursor-not-allowed' :
+                      isPast ? 'bg-slate-50 text-slate-200 border-transparent cursor-not-allowed' :
+                      selectedSlot === h ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg scale-105' :
+                      'bg-emerald-50 text-emerald-600 border-emerald-100 hover:border-emerald-300'
                     }`}
                   >
                     {h}
@@ -239,39 +187,26 @@ export default function Turnero() {
             </div>
           </div>
 
-          <div className="w-full md:w-1/4 flex flex-col border-l border-slate-100 bg-white">
-            <div className="p-6">
-              <a href="https://wa.me/543400000000" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-500 text-white font-black uppercase text-[10px] py-5 rounded-2xl shadow-lg hover:bg-green-600 transition-all">
-                <MessageCircle className="w-5 h-5" /> WhatsApp Barbería
+          {/* Columna Derecha */}
+          <div className="w-full md:w-1/4 p-6 border-l border-slate-100 bg-white">
+              <a href="#" className="flex items-center justify-center gap-2 w-full bg-green-500 text-white font-black text-[10px] py-5 rounded-2xl mb-6 uppercase shadow-lg shadow-green-100">
+                <MessageCircle size={18} /> WhatsApp Barbería
               </a>
-              <div className="mt-6 h-[180px] w-full rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner relative">
-                <iframe title="mapa" width="100%" height="100%" style={{ border: 0 }} src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3335.6322302324!2d-60.3323!3d-33.2215!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzPCsDEzJzE3LjQiUyA2MMKwMTknNTYuMyJX!5e0!3m2!1ses!2sar!4v1620000000000!5m2!1ses!2sar" allowFullScreen="" loading="lazy" className="grayscale"></iframe>
-              </div>
-              <div className="mt-4 flex items-start gap-3 text-slate-400 px-2">
-                <MapPin className="w-4 h-4 text-indigo-600 mt-1" />
-                <p className="text-[10px] font-bold leading-relaxed uppercase">Av. San Martín 1234<br/>Villa Constitución, SF</p>
-              </div>
-            </div>
-            <div className="flex-1 bg-slate-50 p-6 rounded-t-[3rem] border-t border-slate-100 mt-4">
-              <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-900 mb-4 flex items-center gap-2">
-                <Search className="w-3 h-3 text-indigo-600" /> Mis Reservas
+              <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 italic">
+                <Search size={12} className="text-indigo-600" /> Mis Reservas
               </h3>
-              <input type="tel" placeholder="Tu WhatsApp..." className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-[10px] outline-none focus:ring-2 ring-indigo-100 mb-4 font-bold" value={searchPhone} onChange={(e) => { setSearchPhone(e.target.value); fetchMyAppointments(e.target.value); }} />
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+              <input type="tel" placeholder="Tu Celular..." className="w-full p-4 rounded-2xl border text-[10px] font-bold mb-4 outline-none focus:ring-2 ring-indigo-100" value={searchPhone} onChange={(e) => { setSearchPhone(e.target.value); fetchMyAppointments(e.target.value); }} />
+              <div className="space-y-2 overflow-y-auto max-h-[300px]">
                 {myAppointments.map(apt => (
-                  <div key={apt.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center group">
+                  <div key={apt.id} className="p-4 border border-slate-100 rounded-2xl flex justify-between items-center bg-slate-50/50">
                     <div>
-                      <p className="text-[8px] font-black text-indigo-500 uppercase mb-1">{apt.fecha.split('-').reverse().join('/')}</p>
+                      <p className="text-[8px] font-black text-indigo-500 uppercase">{apt.fecha}</p>
                       <p className="font-black text-sm text-slate-900">{apt.hora.substring(0,5)} HS</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase">{apt.servicio}</p>
                     </div>
-                    <button onClick={() => handleCancelAppointment(apt.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Trash2 size={16} className="text-slate-300 hover:text-red-500 cursor-pointer transition-colors" />
                   </div>
                 ))}
               </div>
-            </div>
           </div>
         </div>
       </div>
