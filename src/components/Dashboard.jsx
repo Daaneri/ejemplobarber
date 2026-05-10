@@ -348,7 +348,7 @@ if (!isAuthenticated) {
                   {isSaving ? 'Guardando...' : 'Guardar Todo'}
                 </button>
               </div>
-              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar border-r-2 border-indigo-600/20">
                 {horarios.map(h => (
                   <div key={h.dia} className={`p-6 rounded-[2rem] border transition-all ${h.activo ? 'bg-slate-50 border-slate-100' : 'opacity-40 grayscale'}`}>
                     <div className="flex justify-between items-center mb-4">

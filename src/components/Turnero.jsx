@@ -69,7 +69,6 @@ export default function Turnero() {
     setLoading(false);
   }
 
-  // MODIFICACIÓN PRINCIPAL: Generación de turnos mañana y tarde
   const generateSlots = () => {
     const diaActual = getDayName(selectedDate);
     const config = configHorarios.find(h => h.dia === diaActual);
@@ -88,13 +87,11 @@ export default function Turnero() {
         const h = Math.floor(actual / 60);
         const m = actual % 60;
         slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-        actual += 30; // Bloques de 30 minutos
+        actual += 30; 
       }
     };
 
-    // Agrega el rango de la mañana
     addRange(config.apertura, config.cierre);
-    // Agrega el rango de la tarde (NUEVO)
     addRange(config.apertura_tarde, config.cierre_tarde);
 
     return slots;
@@ -175,7 +172,7 @@ export default function Turnero() {
             </p>
           </div>
           <div className="hidden md:flex bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-200 items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
             <span className="text-[10px] font-bold uppercase">Sistema Activo</span>
           </div>
         </header>
@@ -249,7 +246,22 @@ export default function Turnero() {
                 const apt = appointments.find(a => a.hora && a.hora.startsWith(h));
                 const isPast = isTimeSlotPast(h);
                 return (
-                  <button key={h} disabled={!!apt || isPast} onClick={() => setSelectedSlot(h)} className={`py-4 rounded-xl text-xs font-black transition-all border ${apt ? 'bg-red-50 text-red-200 border-red-50 cursor-not-allowed' : isPast ? 'bg-slate-50 text-slate-200 border-transparent cursor-not-allowed' : selectedSlot === h ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg scale-105' : 'bg-green-50 text-green-600 border-green-100 hover:border-green-300'}`}>{h}</button>
+                  <button 
+                    key={h} 
+                    disabled={!!apt || isPast} 
+                    onClick={() => setSelectedSlot(h)} 
+                    className={`py-4 rounded-xl text-xs font-black transition-all border ${
+                      apt 
+                        ? 'bg-red-50 text-red-200 border-red-50 cursor-not-allowed' 
+                        : isPast 
+                          ? 'bg-slate-50 text-slate-200 border-transparent cursor-not-allowed' 
+                          : selectedSlot === h 
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg scale-105' 
+                            : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300'
+                    }`}
+                  >
+                    {h}
+                  </button>
                 );
               })}
             </div>
@@ -285,7 +297,7 @@ export default function Turnero() {
               </h3>
               <input type="tel" placeholder="Tu WhatsApp..." className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-[10px] outline-none focus:ring-2 ring-indigo-100 mb-4 font-bold" value={searchPhone} onChange={(e) => { setSearchPhone(e.target.value); fetchMyAppointments(e.target.value); }} />
               
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                 {myAppointments.map(apt => (
                   <div key={apt.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center group">
                     <div>
