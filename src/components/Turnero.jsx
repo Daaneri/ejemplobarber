@@ -37,13 +37,20 @@ export default function Turnero() {
     return dias[date.getDay()];
   };
 
+  // MODIFICACIÓN: Bloqueo de turnos pasados y con 30 mins de anticipación
   const isTimeSlotPast = (slot) => {
     if (!isToday) return false;
     const [hour, minutes] = slot.split(':').map(Number);
     const now = new Date();
-    if (hour < now.getHours()) return true;
-    if (hour === now.getHours() && minutes <= now.getMinutes()) return true;
-    return false;
+    
+    const slotDate = new Date();
+    slotDate.setHours(hour);
+    slotDate.setMinutes(minutes);
+    slotDate.setSeconds(0);
+    slotDate.setMilliseconds(0);
+
+    const margin = 30 * 60 * 1000; // 30 minutos en milisegundos
+    return now.getTime() > (slotDate.getTime() - margin);
   };
 
   useEffect(() => {
@@ -92,7 +99,7 @@ export default function Turnero() {
     setMyAppointments(data || []);
   }
 
-  // --- FUNCIÓN PARA CANCELAR TURNO ---
+  // MODIFICACIÓN: Función para cancelar turno
   const handleCancelAppointment = async (id) => {
     const confirm = await Swal.fire({
       title: '¿Anular reserva?',
@@ -109,8 +116,8 @@ export default function Turnero() {
       const { error } = await supabase.from('appointments').delete().eq('id', id);
       if (!error) {
         Swal.fire('Cancelado', 'Tu turno fue eliminado.', 'success');
-        fetchMyAppointments(searchPhone); // Refresca tus reservas
-        getAppointments(); // Libera el slot en el calendario
+        fetchMyAppointments(searchPhone);
+        getAppointments();
       }
     }
   };
@@ -169,7 +176,6 @@ export default function Turnero() {
 
         <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[750px]">
           
-          {/* PASO 1 Y 2 */}
           <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50/50 border-r border-slate-100">
             <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-6">Paso 1: Servicio</h3>
             <div className="space-y-2 mb-8">
@@ -208,7 +214,6 @@ export default function Turnero() {
             </div>
           </div>
 
-          {/* COLUMNA CENTRAL: CALENDARIO */}
           <div className="w-full md:w-2/4 p-6 md:p-10">
             <header className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic">
@@ -244,7 +249,6 @@ export default function Turnero() {
             </div>
           </div>
 
-          {/* COLUMNA DERECHA: MAPA Y TURNOS */}
           <div className="w-full md:w-1/4 flex flex-col border-l border-slate-100 bg-white">
             <div className="p-6">
               <a href="https://wa.me/543400000000" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-500 text-white font-black uppercase text-[10px] py-5 rounded-2xl shadow-lg hover:bg-green-600 transition-all">
@@ -283,7 +287,7 @@ export default function Turnero() {
                       <p className="font-black text-sm text-slate-900">{apt.hora.substring(0,5)} HS</p>
                       <p className="text-[9px] font-bold text-slate-400 uppercase">{apt.servicio}</p>
                     </div>
-                    {/* BOTÓN DE CANCELAR */}
+                    {/* MODIFICACIÓN: Botón de cancelar turno con Trash2 */}
                     <button 
                       onClick={() => handleCancelAppointment(apt.id)}
                       className="p-2 text-slate-300 hover:text-red-500 transition-colors"
