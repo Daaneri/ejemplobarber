@@ -6,8 +6,6 @@ import {
   Search, 
   MapPin, 
   Clock,
-  CheckCircle,
-  Smartphone,
   Trash2
 } from 'lucide-react';
 
@@ -26,9 +24,9 @@ export default function Turnero() {
   const getLocalDateString = (date) => {
     const offset = date.getTimezoneOffset();
     const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
-    return adjustedDate.toISOString().split('T')[0];
+    return adjustedDate.toISOString().split('T')[0]; 
   };
-
+  
   const dateString = getLocalDateString(selectedDate);
   const isToday = dateString === getLocalDateString(new Date());
   
@@ -37,19 +35,13 @@ export default function Turnero() {
     return dias[date.getDay()];
   };
 
-  // MODIFICACIÓN: Bloqueo de turnos pasados y con 30 mins de anticipación
   const isTimeSlotPast = (slot) => {
     if (!isToday) return false;
     const [hour, minutes] = slot.split(':').map(Number);
     const now = new Date();
-    
     const slotDate = new Date();
-    slotDate.setHours(hour);
-    slotDate.setMinutes(minutes);
-    slotDate.setSeconds(0);
-    slotDate.setMilliseconds(0);
-
-    const margin = 30 * 60 * 1000; // 30 minutos en milisegundos
+    slotDate.setHours(hour, minutes, 0, 0);
+    const margin = 30 * 60 * 1000; 
     return now.getTime() > (slotDate.getTime() - margin);
   };
 
@@ -77,19 +69,34 @@ export default function Turnero() {
     setLoading(false);
   }
 
+  // MODIFICACIÓN PRINCIPAL: Generación de turnos mañana y tarde
   const generateSlots = () => {
     const diaActual = getDayName(selectedDate);
     const config = configHorarios.find(h => h.dia === diaActual);
     if (!config || !config.activo) return [];
-
+    
     const slots = [];
-    let inicio = parseInt(config.apertura.split(':')[0]);
-    let fin = parseInt(config.cierre.split(':')[0]);
+    const addRange = (inicioStr, finStr) => {
+      if (!inicioStr || !finStr) return;
+      let [hInicio, mInicio] = inicioStr.split(':').map(Number);
+      let [hFin, mFin] = finStr.split(':').map(Number);
+      
+      let actual = hInicio * 60 + mInicio;
+      const limite = hFin * 60 + mFin;
 
-    for (let h = inicio; h < fin; h++) {
-      slots.push(`${h.toString().padStart(2, '0')}:00`);
-      slots.push(`${h.toString().padStart(2, '0')}:30`);
-    }
+      while (actual < limite) {
+        const h = Math.floor(actual / 60);
+        const m = actual % 60;
+        slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+        actual += 30; // Bloques de 30 minutos
+      }
+    };
+
+    // Agrega el rango de la mañana
+    addRange(config.apertura, config.cierre);
+    // Agrega el rango de la tarde (NUEVO)
+    addRange(config.apertura_tarde, config.cierre_tarde);
+
     return slots;
   };
 
@@ -99,7 +106,6 @@ export default function Turnero() {
     setMyAppointments(data || []);
   }
 
-  // MODIFICACIÓN: Función para cancelar turno
   const handleCancelAppointment = async (id) => {
     const confirm = await Swal.fire({
       title: '¿Anular reserva?',
@@ -261,7 +267,7 @@ export default function Turnero() {
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3330.449764835691!2d-60.33446!3d-33.2269!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzPCsDEzJzM2LjgiUyA2MMKwMjAnMDQuMSJX!5e0!3m2!1ses-419!2sar!4v1715000000000!5m2!1ses-419!2sar" 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13346.885141675203!2d-60.33446453982855!3d-33.247659553556014!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c66d1933c9d%3A0xc3f1a070f86236b2!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1714900000000!5m2!1ses-419!2sar" 
                   allowFullScreen="" 
                   loading="lazy"
                   className="grayscale group-hover:grayscale-0 transition-all duration-500"
@@ -287,7 +293,6 @@ export default function Turnero() {
                       <p className="font-black text-sm text-slate-900">{apt.hora.substring(0,5)} HS</p>
                       <p className="text-[9px] font-bold text-slate-400 uppercase">{apt.servicio}</p>
                     </div>
-                    {/* MODIFICACIÓN: Botón de cancelar turno con Trash2 */}
                     <button 
                       onClick={() => handleCancelAppointment(apt.id)}
                       className="p-2 text-slate-300 hover:text-red-500 transition-colors"

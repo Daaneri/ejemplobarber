@@ -2,8 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from "../supabaseClient";
 import Swal from 'sweetalert2';
 import { 
-  Trash2, Calendar as CalendarIcon, Clock, Smartphone, Scissors, 
-  Lock, LogIn, MessageSquare, TrendingUp, Users, LogOut, Activity, Settings, Save, CheckCircle2, XCircle
+  Trash2, 
+  Calendar as CalendarIcon, 
+  Clock, 
+  Smartphone, 
+  Scissors, 
+  Lock, 
+  LogOut, 
+  MessageSquare, 
+  Save, 
+  Plus,
+  TrendingUp,
+  Users
 } from 'lucide-react';
 
 export default function AdminPanel() {
@@ -23,9 +33,9 @@ export default function AdminPanel() {
     e.preventDefault();
     if (password === MASTER_PASSWORD) {
       setIsAuthenticated(true);
-      Swal.fire({ title: '¡Bienvenido!', icon: 'success', timer: 1500, showConfirmButton: false, customClass: { popup: 'rounded-[2.5rem]' } });
+      Swal.fire({ title: 'Acceso Concedido', icon: 'success', timer: 1000, showConfirmButton: false });
     } else {
-      Swal.fire({ title: 'Error', text: 'Contraseña incorrecta', icon: 'error', confirmButtonColor: '#4f46e5' });
+      Swal.fire({ title: 'Error', text: 'Contraseña incorrecta', icon: 'error', confirmButtonColor: '#ef4444' });
     }
   };
 
@@ -38,29 +48,49 @@ export default function AdminPanel() {
 
   async function fetchDailyAppointments() {
     setLoading(true);
-    const { data } = await supabase.from('appointments').select('*').eq('fecha', selectedDate).order('hora', { ascending: true });
+    const { data } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('fecha', selectedDate)
+      .order('hora', { ascending: true });
     setAppointments(data || []);
     setLoading(false);
   }
 
   async function fetchConfig() {
-    try {
-      const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
-      const { data: hor, error: horError } = await supabase.from('configuracion_horarios').select('*');
-      
-      if (horError) console.error("Error en Supabase:", horError.message);
-
-      setServicios(srv || []);
-      setHorarios(hor || []);
-    } catch (err) {
-      console.error("Error inesperado:", err);
-    }
+    const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
+    const { data: hor } = await supabase.from('configuracion_horarios').select('*');
+    setServicios(srv || []);
+    setHorarios(hor || []);
   }
 
+  const handleAddService = async () => {
+    const { value: formValues } = await Swal.fire({
+      title: 'Nuevo Servicio',
+      html: `
+        <input id="swal-input1" class="swal2-input" placeholder="Nombre del servicio">
+        <input id="swal-input2" type="number" class="swal2-input" placeholder="Precio ($)">
+      `,
+      focusConfirm: false,
+      confirmButtonColor: '#4f46e5',
+      preConfirm: () => [
+        document.getElementById('swal-input1').value,
+        document.getElementById('swal-input2').value
+      ]
+    });
+
+    if (formValues && formValues[0]) {
+      const { error } = await supabase.from('servicios').insert([{ 
+        nombre: formValues[0], 
+        precio: parseInt(formValues[1]), 
+        orden: servicios.length + 1 
+      }]);
+      if (!error) fetchConfig();
+    }
+  };
+
   const handleHorarioChange = (dia, campo, valor) => {
-    setHorarios(prev => prev.map(h => 
-      h.dia === dia ? { ...h, [campo]: valor } : h
-    ));
+    setHorarios(prev => prev.map(h => h.dia === dia ? { ...h, [campo]: valor } : h));
   };
 
   const saveAllChanges = async () => {
@@ -72,238 +102,228 @@ export default function AdminPanel() {
           .update({ 
             apertura: h.apertura, 
             cierre: h.cierre, 
+            apertura_tarde: h.apertura_tarde, 
+            cierre_tarde: h.cierre_tarde, 
             activo: h.activo 
           })
           .eq('dia', h.dia)
       );
-      
       await Promise.all(promises);
-      
-      Swal.fire({ 
-        title: '¡Configuración Guardada!', 
-        text: 'Los cambios ya están en la web de turnos.',
-        icon: 'success', 
-        confirmButtonColor: '#4f46e5',
-        customClass: { popup: 'rounded-[2rem]' }
-      });
-    } catch (error) {
-      console.error(error);
-      Swal.fire('Error', 'No se pudieron guardar los cambios', 'error');
+      Swal.fire({ title: 'Configuración Guardada', icon: 'success', confirmButtonColor: '#4f46e5' });
+    } catch (err) {
+      Swal.fire('Error', 'No se pudo guardar', 'error');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const calcularCaja = () => {
-    return appointments.reduce((acc, apt) => {
-      const servicioEncontrado = servicios.find(s => s.nombre === apt.servicio);
-      return acc + (servicioEncontrado ? servicioEncontrado.precio : 0);
-    }, 0);
-  };
-
-  const handleUpdatePrice = async (id, nuevoPrecio) => {
-    const { error } = await supabase.from('servicios').update({ precio: parseInt(nuevoPrecio) }).eq('id', id);
-    if (!error) {
-      Swal.fire({ title: 'Precio actualizado', icon: 'success', timer: 800, showConfirmButton: false, customClass: { popup: 'rounded-3xl' } });
-      fetchConfig();
-    }
-  };
-
-  const handleDelete = async (id, cliente) => {
-    const result = await Swal.fire({
-      title: '¿Eliminar turno?',
-      text: `Se liberará el horario de ${cliente}`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      confirmButtonText: 'Sí, borrar',
-      cancelButtonText: 'Cancelar',
-      customClass: { popup: 'rounded-[2.5rem]' }
-    });
-    if (result.isConfirmed) {
-      await supabase.from('appointments').delete().eq('id', id);
-      fetchDailyAppointments();
-    }
-  };
-
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans text-slate-800">
-        <div className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-md w-full text-center border-b-[12px] border-indigo-600">
-          <div className="bg-indigo-50 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8">
-            <Lock className="text-indigo-600 w-10 h-10" />
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
+        <form onSubmit={handleLogin} className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-md w-full text-center border border-slate-200">
+          <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-indigo-600">
+            <Lock size={36} />
           </div>
-          <h2 className="text-3xl font-black text-slate-900 mb-2 italic tracking-tighter">admin<span className="text-indigo-600">.barber</span></h2>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-10 text-center">Panel de Gestión</p>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input type="password" placeholder="Clave de acceso" className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-100 outline-none text-center font-bold text-lg" value={password} onChange={(e) => setPassword(e.target.value)} />
-            <button type="submit" className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl active:scale-95">
-              <LogIn className="w-5 h-5" /> ENTRAR AHORA
-            </button>
-          </form>
-        </div>
+          <h2 className="text-3xl font-black mb-2 text-slate-900 tracking-tighter italic">admin.<span className="text-indigo-600">barber</span></h2>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8">Panel de Control</p>
+          <input 
+            type="password" 
+            placeholder="Clave Maestra" 
+            className="w-full p-5 bg-slate-50 rounded-2xl border border-slate-100 mb-4 text-center font-bold outline-none focus:ring-2 ring-indigo-100" 
+            value={password} 
+            onChange={e => setPassword(e.target.value)} 
+          />
+          <button className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-black transition-all shadow-xl shadow-indigo-100 uppercase tracking-widest text-xs">Entrar al Panel</button>
+        </form>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 p-2 md:p-10 font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-100 p-4 md:p-10 font-sans text-slate-800">
       <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row items-center justify-between mb-8 px-6">
-          <div>
-            <h1 className="text-5xl font-black text-slate-900 tracking-tighter lowercase italic">admin<span className="text-indigo-600">.barber</span></h1>
-            <nav className="flex gap-6 mt-4">
-              <button onClick={() => setActiveTab('agenda')} className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeTab === 'agenda' ? 'border-indigo-600 text-slate-900' : 'border-transparent text-slate-400'}`}>Agenda</button>
-              <button onClick={() => setActiveTab('config')} className={`text-[10px] font-black uppercase tracking-widest pb-1 border-b-2 transition-all ${activeTab === 'config' ? 'border-indigo-600 text-slate-900' : 'border-transparent text-slate-400'}`}>Configuración</button>
-            </nav>
+        
+        <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+          <h1 className="text-4xl font-black italic tracking-tighter">admin.<span className="text-indigo-600">barber</span></h1>
+          
+          <div className="flex bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+            <button 
+              onClick={() => setActiveTab('agenda')} 
+              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'agenda' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Agenda Diaria
+            </button>
+            <button 
+              onClick={() => setActiveTab('config')} 
+              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'config' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Configuración
+            </button>
           </div>
-          <div className="flex items-center gap-4 mt-6 md:mt-0">
-             {activeTab === 'agenda' && (
-               <div className="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
-                  <CalendarIcon className="w-4 h-4 text-indigo-600" />
-                  <input type="date" className="bg-transparent outline-none text-xs font-black text-slate-900 uppercase" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-               </div>
-             )}
-             <button onClick={() => setIsAuthenticated(false)} className="bg-red-50 text-red-500 p-3 rounded-xl hover:bg-red-500 hover:text-white transition-all"><LogOut className="w-5 h-5" /></button>
-          </div>
+
+          <button onClick={() => setIsAuthenticated(false)} className="bg-red-50 text-red-500 p-4 rounded-2xl hover:bg-red-100 transition-colors">
+            <LogOut size={20}/>
+          </button>
         </header>
 
         {activeTab === 'agenda' ? (
-          <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
-             <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50/50 border-r border-slate-100">
-                <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-2">
-                   <Activity className="w-4 h-4 text-indigo-600" /> Resumen Hoy
-                </h3>
-                <div className="space-y-4 mb-8">
-                   <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-                      <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest relative z-10">Turnos Hoy</p>
-                      <div className="text-4xl font-black text-slate-900 relative z-10">{appointments.length}</div>
-                      <Users className="w-8 h-8 text-indigo-50 absolute right-6 bottom-6 group-hover:scale-110 transition-transform" />
-                   </div>
-                   <div className="bg-indigo-600 p-6 rounded-[2rem] shadow-lg shadow-indigo-100 text-white relative overflow-hidden">
-                      <p className="text-[10px] font-black opacity-70 uppercase tracking-widest">Caja Estimada</p>
-                      <div className="text-3xl font-black italic">$ {calcularCaja().toLocaleString()}</div>
-                      <TrendingUp className="w-12 h-12 absolute -right-2 -bottom-2 opacity-10" />
-                   </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                    <CalendarIcon size={24} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Fecha Visualizada</p>
+                    <input type="date" className="font-black text-xl outline-none bg-transparent" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+                  </div>
                 </div>
-             </div>
-             
-             <div className="w-full md:w-3/4 p-6 md:p-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {loading ? (
-                    <div className="col-span-full py-20 text-center text-4xl font-black text-slate-100 italic animate-pulse tracking-tighter">Cargando...</div>
-                  ) : appointments.length === 0 ? (
-                    <div className="col-span-full flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-100 rounded-[3rem]">
-                       <Clock className="w-12 h-12 text-slate-100 mb-4" />
-                       <p className="text-slate-300 font-black uppercase text-xs tracking-widest">Sin turnos para esta fecha</p>
+                <div className="bg-slate-900 p-6 rounded-3xl text-white shadow-2xl shadow-indigo-200">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-black uppercase opacity-60">Total Turnos</p>
+                      <p className="text-4xl font-black">{appointments.length}</p>
                     </div>
-                  ) : appointments.map((apt) => (
-                    <div key={apt.id} className="bg-slate-50/50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl hover:border-indigo-100 transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-slate-900 text-white w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-lg group-hover:bg-indigo-600 transition-colors">
-                          <span className="text-[9px] font-bold opacity-60 leading-none uppercase">Hora</span>
-                          <span className="text-sm font-black">{apt.hora.substring(0, 5)}</span>
-                        </div>
-                        <div>
-                          <h4 className="font-black text-slate-900 text-sm uppercase tracking-tight">{apt.cliente}</h4>
-                          <div className="flex gap-2 mt-1">
-                             <span className="bg-indigo-50 text-indigo-600 text-[9px] font-black px-2 py-0.5 rounded-md uppercase">{apt.servicio}</span>
-                             <span className="text-slate-400 text-[9px] font-bold flex items-center gap-1"><Smartphone className="w-3 h-3" /> {apt.telefono}</span>
-                          </div>
+                    <TrendingUp className="text-indigo-400" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-2 space-y-3">
+              {loading ? (
+                <div className="py-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-widest">Cargando Agenda...</div>
+              ) : appointments.length === 0 ? (
+                <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
+                  <p className="font-black text-slate-300 uppercase">No hay turnos para este día</p>
+                </div>
+              ) : (
+                appointments.map(apt => (
+                  <div key={apt.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 group hover:shadow-md transition-all">
+                    <div className="flex items-center gap-5 w-full">
+                      <div className="bg-indigo-600 text-white h-16 w-16 rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-indigo-100">
+                        <Clock size={16} className="mb-1 opacity-60" />
+                        <p className="text-sm font-black">{apt.hora.substring(0,5)}</p>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-black text-lg uppercase tracking-tight text-slate-900">{apt.cliente}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="text-[9px] font-black bg-slate-100 px-2 py-1 rounded-md text-slate-500 uppercase">{apt.servicio}</span>
+                          <span className="text-[9px] font-black bg-green-50 px-2 py-1 rounded-md text-green-600 uppercase flex items-center gap-1">
+                            <Smartphone size={10} /> {apt.telefono}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => window.open(`https://wa.me/${apt.telefono.replace(/\D/g, '')}`)} className="p-3 bg-white text-green-500 rounded-xl hover:bg-green-500 hover:text-white transition-all border border-slate-100 shadow-sm"><MessageSquare className="w-4 h-4" /></button>
-                        <button onClick={() => handleDelete(apt.id, apt.cliente)} className="p-3 bg-white text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-slate-100 shadow-sm"><Trash2 className="w-4 h-4" /></button>
-                      </div>
                     </div>
-                  ))}
-                </div>
-             </div>
+                    <div className="flex gap-2 w-full md:w-auto">
+                      <button 
+                        onClick={() => window.open(`https://wa.me/${apt.telefono.replace(/\D/g,'')}`)} 
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-green-500 text-white font-black text-[10px] px-6 py-4 rounded-2xl hover:bg-green-600 transition-all uppercase"
+                      >
+                        <MessageSquare size={14}/> WhatsApp
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          const conf = await Swal.fire({ title: '¿Eliminar turno?', icon: 'warning', showCancelButton: true });
+                          if (conf.isConfirmed) {
+                            await supabase.from('appointments').delete().eq('id', apt.id);
+                            fetchDailyAppointments();
+                          }
+                        }} 
+                        className="p-4 text-red-400 bg-red-50 rounded-2xl hover:bg-red-500 hover:text-white transition-all"
+                      >
+                        <Trash2 size={18}/>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="bg-indigo-50 p-3 rounded-2xl"><Scissors className="text-indigo-600 w-6 h-6" /></div>
-                <div><h3 className="font-black text-lg uppercase">Servicios</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gestionar Precios</p></div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* SERVICIOS */}
+            <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h3 className="font-black text-xl italic">servicios.<span className="text-indigo-600">list</span></h3>
+                  <p className="text-[9px] font-black text-slate-400 uppercase">Precios y opciones</p>
+                </div>
+                <button onClick={handleAddService} className="bg-indigo-600 text-white p-4 rounded-2xl shadow-lg shadow-indigo-100 hover:scale-105 transition-all">
+                  <Plus size={20}/>
+                </button>
               </div>
-              <div className="space-y-4">
-                {servicios.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="font-black text-xs uppercase text-slate-900">{s.nombre}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-slate-400">$</span>
-                      <input 
-                        type="number" 
-                        defaultValue={s.precio} 
-                        onBlur={(e) => handleUpdatePrice(s.id, e.target.value)}
-                        className="w-24 bg-white border border-slate-200 rounded-lg p-2 text-xs font-black text-center outline-none focus:ring-2 ring-indigo-100 transition-all"
-                      />
+              <div className="space-y-3">
+                {servicios.map(s => (
+                  <div key={s.id} className="flex justify-between items-center p-5 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-white rounded-lg"><Scissors size={14} className="text-slate-400" /></div>
+                      <span className="font-black text-xs uppercase tracking-tight">{s.nombre}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-black text-indigo-600">${s.precio}</span>
+                      <button onClick={async () => { await supabase.from('servicios').delete().eq('id', s.id); fetchConfig(); }} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 flex flex-col">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="bg-indigo-50 p-3 rounded-2xl"><Clock className="text-indigo-600 w-6 h-6" /></div>
-                <div><h3 className="font-black text-lg uppercase">Horarios Abierto</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Disponibilidad semanal</p></div>
-              </div>
-              <div className="space-y-3 flex-1">
-                {horarios.length > 0 ? horarios.map((h) => (
-                  <div key={h.dia} className="flex items-center justify-between p-3 px-5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all group">
-                    <span className="text-xs font-black uppercase text-slate-700 tracking-tighter w-20">{h.dia}</span>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="text" 
-                        value={h.apertura ? h.apertura.substring(0, 5) : '09:00'} 
-                        onChange={(e) => handleHorarioChange(h.dia, 'apertura', e.target.value)}
-                        className="w-14 bg-white border border-slate-200 rounded-lg p-1.5 text-[10px] font-black text-center outline-none focus:ring-2 ring-indigo-100"
-                      />
-                      <span className="text-[8px] font-black text-slate-300">A</span>
-                      <input 
-                        type="text" 
-                        value={h.cierre ? h.cierre.substring(0, 5) : '20:00'} 
-                        onChange={(e) => handleHorarioChange(h.dia, 'cierre', e.target.value)}
-                        className="w-14 bg-white border border-slate-200 rounded-lg p-1.5 text-[10px] font-black text-center outline-none focus:ring-2 ring-indigo-100"
-                      />
-                      <button 
-                        onClick={() => handleHorarioChange(h.dia, 'activo', !h.activo)}
-                        className={`ml-2 p-2 rounded-lg transition-all ${h.activo ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}
-                      >
-                        {h.activo ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                      </button>
-                    </div>
-                  </div>
-                )) : (
-                  <p className="text-center text-slate-300 py-10 font-black uppercase text-[10px] tracking-widest">Cargando horarios...</p>
-                )}
-              </div>
 
-              <button 
-                onClick={saveAllChanges}
-                disabled={isSaving}
-                className={`w-full bg-slate-900 text-white font-black py-5 rounded-2xl mt-8 flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl active:scale-95 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <Save className="w-5 h-5" /> {isSaving ? 'GUARDANDO...' : 'GUARDAR CONFIGURACIÓN'}
-              </button>
+            {/* HORARIOS CON MAÑANA Y TARDE */}
+            <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h3 className="font-black text-xl italic">horarios.<span className="text-indigo-600">config</span></h3>
+                  <p className="text-[9px] font-black text-slate-400 uppercase">Apertura y cierre partido</p>
+                </div>
+                <button 
+                  onClick={saveAllChanges} 
+                  disabled={isSaving} 
+                  className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black flex items-center gap-3 shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all uppercase"
+                >
+                  {isSaving ? <Activity className="animate-spin" size={14}/> : <Save size={14}/>} 
+                  {isSaving ? 'Guardando...' : 'Guardar Todo'}
+                </button>
+              </div>
+              
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                {horarios.map(h => (
+                  <div key={h.dia} className={`p-6 rounded-[2rem] border transition-all ${h.activo ? 'bg-slate-50 border-slate-100' : 'bg-white opacity-40 grayscale border-dashed border-slate-200'}`}>
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="font-black text-sm uppercase tracking-widest">{h.dia}</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={h.activo} onChange={e => handleHorarioChange(h.dia, 'activo', e.target.checked)} />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                      </label>
+                    </div>
+                    
+                    {h.activo && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Rango Mañana */}
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-black text-slate-400 uppercase">Turno Mañana</p>
+                          <div className="flex gap-2">
+                            <input type="time" className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 ring-indigo-50" value={h.apertura} onChange={e => handleHorarioChange(h.dia, 'apertura', e.target.value)} />
+                            <input type="time" className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 ring-indigo-50" value={h.cierre} onChange={e => handleHorarioChange(h.dia, 'cierre', e.target.value)} />
+                          </div>
+                        </div>
+                        {/* Rango Tarde */}
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-black text-indigo-400 uppercase">Turno Tarde</p>
+                          <div className="flex gap-2">
+                            <input type="time" className="w-full p-3 rounded-xl border border-indigo-100 text-xs font-bold outline-none focus:ring-2 ring-indigo-50 bg-indigo-50/30" value={h.apertura_tarde || '16:00'} onChange={e => handleHorarioChange(h.dia, 'apertura_tarde', e.target.value)} />
+                            <input type="time" className="w-full p-3 rounded-xl border border-indigo-100 text-xs font-bold outline-none focus:ring-2 ring-indigo-50 bg-indigo-50/30" value={h.cierre_tarde || '20:00'} onChange={e => handleHorarioChange(h.dia, 'cierre_tarde', e.target.value)} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
-
-        <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 px-6 text-center md:text-left">
-          <div>
-             <h4 className="text-xl font-black text-slate-900 lowercase italic">admin<span className="text-indigo-600">.barber</span></h4>
-             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Control Real-Time • Villa Constitución</p>
-          </div>
-          <div className="text-center md:text-right">
-             <p className="text-[10px] text-slate-400 font-medium tracking-tight">© 2026 — ejemplo.barber</p>
-             {/* CAMBIO: EliteWar Soft como texto estático */}
-             <p className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic">EliteWar Soft</p>
-          </div>
-        </footer>
       </div>
     </div>
   );
