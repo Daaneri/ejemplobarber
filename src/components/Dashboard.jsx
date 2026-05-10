@@ -211,9 +211,6 @@ export default function AdminPanel() {
   );
 }
 
-
-
-
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-10 font-sans text-slate-800">
       <div className="max-w-6xl mx-auto">
@@ -261,7 +258,6 @@ export default function AdminPanel() {
                   return (
                     <div key={h} className={`bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between transition-all ${apt && !isBlocked ? 'border-indigo-200' : ''}`}>
                       <div className="flex items-center gap-4">
-                        {/* Cuadrito de la hora */}
                         <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-black text-xs ${
                           apt ? (isBlocked ? 'bg-slate-200 text-slate-500' : 'bg-indigo-600 text-white') : 'bg-slate-100 text-slate-400'
                         }`}>
@@ -361,7 +357,7 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            {/* CONFIGURACIÓN DE HORARIOS */}
+            {/* CONFIGURACIÓN DE HORARIOS RESPONSIVA */}
             <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100">
               <div className="flex justify-between items-center mb-8">
                 <h3 className="font-black text-xl italic">horarios.<span className="text-indigo-600">config</span></h3>
@@ -378,7 +374,7 @@ export default function AdminPanel() {
                       <input type="checkbox" checked={h.activo} onChange={e => handleHorarioChange(h.dia, 'activo', e.target.checked)} className="h-5 w-5 accent-indigo-600 cursor-pointer" />
                     </div>
                     {h.activo && (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mañana</p>
                           <div className="flex gap-2">
