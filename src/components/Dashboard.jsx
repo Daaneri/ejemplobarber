@@ -13,7 +13,8 @@ import {
   Save, 
   Plus,
   TrendingUp,
-  Users
+  Users,
+  Activity
 } from 'lucide-react';
 
 export default function AdminPanel() {
@@ -63,6 +64,51 @@ export default function AdminPanel() {
     setServicios(srv || []);
     setHorarios(hor || []);
   }
+
+  // Lógica para generar los slots en el Admin
+  const generateSlotsForAdmin = () => {
+    const dateObj = new Date(selectedDate + 'T00:00:00');
+    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const diaNombre = dias[dateObj.getDay()];
+    const config = horarios.find(h => h.dia === diaNombre);
+    
+    if (!config || !config.activo) return [];
+    
+    const slots = [];
+    const addRange = (inicioStr, finStr) => {
+      if (!inicioStr || !finStr) return;
+      let [hInicio, mInicio] = inicioStr.split(':').map(Number);
+      let [hFin, mFin] = finStr.split(':').map(Number);
+      let actual = hInicio * 60 + mInicio;
+      const limite = hFin * 60 + mFin;
+      while (actual < limite) {
+        const h = Math.floor(actual / 60);
+        const m = actual % 60;
+        slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+        actual += 30;
+      }
+    };
+
+    addRange(config.apertura, config.cierre);
+    addRange(config.apertura_tarde, config.cierre_tarde);
+    return slots;
+  };
+
+  const handleQuickBlock = async (hora) => {
+    const { error } = await supabase.from('appointments').insert([{ 
+      cliente: '🚫 BLOQUEADO', 
+      telefono: '000000', 
+      fecha: selectedDate, 
+      hora: hora, 
+      servicio: 'RESERVADO POR LOCAL' 
+    }]);
+
+    if (!error) {
+      fetchDailyAppointments();
+    } else {
+      Swal.fire('Error', 'No se pudo bloquear el turno', 'error');
+    }
+  };
 
   const handleAddService = async () => {
     const { value: formValues } = await Swal.fire({
@@ -194,50 +240,54 @@ export default function AdminPanel() {
             <div className="lg:col-span-2 space-y-3">
               {loading ? (
                 <div className="py-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-widest">Cargando Agenda...</div>
-              ) : appointments.length === 0 ? (
-                <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
-                  <p className="font-black text-slate-300 uppercase">No hay turnos para este día</p>
-                </div>
               ) : (
-                appointments.map(apt => (
-                  <div key={apt.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 group hover:shadow-md transition-all">
-                    <div className="flex items-center gap-5 w-full">
-                      <div className="bg-indigo-600 text-white h-16 w-16 rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-indigo-100">
-                        <Clock size={16} className="mb-1 opacity-60" />
-                        <p className="text-sm font-black">{apt.hora.substring(0,5)}</p>
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-black text-lg uppercase tracking-tight text-slate-900">{apt.cliente}</p>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          <span className="text-[9px] font-black bg-slate-100 px-2 py-1 rounded-md text-slate-500 uppercase">{apt.servicio}</span>
-                          <span className="text-[9px] font-black bg-green-50 px-2 py-1 rounded-md text-green-600 uppercase flex items-center gap-1">
-                            <Smartphone size={10} /> {apt.telefono}
-                          </span>
+                generateSlotsForAdmin().map(h => {
+                  const apt = appointments.find(a => a.hora && a.hora.startsWith(h));
+                  return (
+                    <div key={h} className={`bg-white p-4 rounded-3xl border flex items-center justify-between transition-all ${apt ? 'border-slate-100 shadow-sm' : 'border-dashed border-slate-200 opacity-60'}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`h-12 w-12 rounded-xl flex flex-center justify-center items-center font-black text-xs ${apt ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                          {h}
                         </div>
+                        {apt ? (
+                          <div>
+                            <p className="font-black text-sm uppercase">{apt.cliente}</p>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase">{apt.servicio} • {apt.telefono}</p>
+                          </div>
+                        ) : (
+                          <p className="text-xs font-bold text-slate-300 uppercase italic">Libre</p>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        {apt ? (
+                          <>
+                            <button onClick={() => window.open(`https://wa.me/${apt.telefono.replace(/\D/g,'')}`)} className="p-3 text-green-500 bg-green-50 rounded-xl hover:bg-green-500 hover:text-white transition-all"><MessageSquare size={16}/></button>
+                            <button 
+                              onClick={async () => {
+                                const conf = await Swal.fire({ title: '¿Eliminar turno?', icon: 'warning', showCancelButton: true });
+                                if (conf.isConfirmed) {
+                                  await supabase.from('appointments').delete().eq('id', apt.id);
+                                  fetchDailyAppointments();
+                                }
+                              }} 
+                              className="p-3 text-red-400 bg-red-50 rounded-xl hover:bg-red-500 hover:text-white transition-all"
+                            >
+                              <Trash2 size={16}/>
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            onClick={() => handleQuickBlock(h)} 
+                            className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-black flex items-center gap-2"
+                          >
+                            <Lock size={12}/> Bloquear
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-2 w-full md:w-auto">
-                      <button 
-                        onClick={() => window.open(`https://wa.me/${apt.telefono.replace(/\D/g,'')}`)} 
-                        className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-green-500 text-white font-black text-[10px] px-6 py-4 rounded-2xl hover:bg-green-600 transition-all uppercase"
-                      >
-                        <MessageSquare size={14}/> WhatsApp
-                      </button>
-                      <button 
-                        onClick={async () => {
-                          const conf = await Swal.fire({ title: '¿Eliminar turno?', icon: 'warning', showCancelButton: true });
-                          if (conf.isConfirmed) {
-                            await supabase.from('appointments').delete().eq('id', apt.id);
-                            fetchDailyAppointments();
-                          }
-                        }} 
-                        className="p-4 text-red-400 bg-red-50 rounded-2xl hover:bg-red-500 hover:text-white transition-all"
-                      >
-                        <Trash2 size={18}/>
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -300,7 +350,6 @@ export default function AdminPanel() {
                     
                     {h.activo && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Rango Mañana */}
                         <div className="space-y-2">
                           <p className="text-[9px] font-black text-slate-400 uppercase">Turno Mañana</p>
                           <div className="flex gap-2">
@@ -308,7 +357,6 @@ export default function AdminPanel() {
                             <input type="time" className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:ring-2 ring-indigo-50" value={h.cierre} onChange={e => handleHorarioChange(h.dia, 'cierre', e.target.value)} />
                           </div>
                         </div>
-                        {/* Rango Tarde */}
                         <div className="space-y-2">
                           <p className="text-[9px] font-black text-indigo-400 uppercase">Turno Tarde</p>
                           <div className="flex gap-2">
