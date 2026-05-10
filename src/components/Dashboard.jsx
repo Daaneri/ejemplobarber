@@ -4,15 +4,12 @@ import Swal from 'sweetalert2';
 import { 
   Trash2, 
   Calendar as CalendarIcon, 
-  Clock, 
-  Smartphone, 
-  Scissors, 
   Lock, 
   LogOut, 
   MessageSquare, 
   Save, 
   Plus,
-  TrendingUp,
+  Scissors,
   Activity
 } from 'lucide-react';
 
@@ -29,7 +26,7 @@ export default function AdminPanel() {
 
   const MASTER_PASSWORD = 'barbero22'; 
 
-  // Nombres de días exactos para coincidir con tu Supabase
+  // Configuración de días exacta para Supabase
   const diasSemanales = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
   const handleLogin = (e) => {
@@ -113,11 +110,10 @@ export default function AdminPanel() {
     const { value: formValues } = await Swal.fire({
       title: 'Nuevo Servicio',
       html: `
-        <input id="swal-input1" class="swal2-input" placeholder="Nombre (ej: Corte + Barba)">
+        <input id="swal-input1" class="swal2-input" placeholder="Nombre">
         <input id="swal-input2" type="number" class="swal2-input" placeholder="Precio ($)">
       `,
       focusConfirm: false,
-      confirmButtonColor: '#4f46e5',
       preConfirm: () => [
         document.getElementById('swal-input1').value,
         document.getElementById('swal-input2').value
@@ -154,7 +150,7 @@ export default function AdminPanel() {
           .eq('dia', h.dia)
       );
       await Promise.all(promises);
-      Swal.fire({ title: 'Configuración Guardada', icon: 'success' });
+      Swal.fire({ title: 'Guardado correctamente', icon: 'success' });
     } catch (err) {
       Swal.fire('Error', 'No se pudo guardar', 'error');
     } finally {
@@ -164,12 +160,12 @@ export default function AdminPanel() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
         <form onSubmit={handleLogin} className="bg-white p-10 rounded-[3rem] shadow-2xl max-w-md w-full text-center border border-slate-200">
           <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-indigo-600">
             <Lock size={36} />
           </div>
-          <h2 className="text-3xl font-black mb-8 italic text-slate-900 tracking-tighter italic">admin.<span className="text-indigo-600">barber</span></h2>
+          <h2 className="text-3xl font-black mb-8 italic text-slate-900 tracking-tighter">admin.<span className="text-indigo-600">barber</span></h2>
           <input 
             type="password" 
             placeholder="Clave Maestra" 
@@ -177,7 +173,7 @@ export default function AdminPanel() {
             value={password} 
             onChange={e => setPassword(e.target.value)} 
           />
-          <button className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-black transition-all uppercase tracking-widest text-xs shadow-xl shadow-indigo-100">Entrar</button>
+          <button className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-black transition-all uppercase tracking-widest text-xs">Entrar</button>
         </form>
       </div>
     );
@@ -203,50 +199,99 @@ export default function AdminPanel() {
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><CalendarIcon size={24} /></div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Fecha Visualizada</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha Seleccionada</p>
                     <input type="date" className="font-black text-xl outline-none bg-transparent" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
                   </div>
                 </div>
-                <div className="bg-slate-900 p-6 rounded-3xl text-white shadow-2xl">
-                  <p className="text-[10px] font-black uppercase opacity-60">Total Turnos</p>
-                  <p className="text-4xl font-black">{appointments.length}</p>
+                <div className="bg-slate-900 p-6 rounded-3xl text-white shadow-2xl flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] font-black uppercase opacity-60">Turnos Hoy</p>
+                    <p className="text-4xl font-black">{appointments.filter(a => a.cliente !== '🚫 BLOQUEADO').length}</p>
+                  </div>
+                  <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                    <Activity size={24} className="text-indigo-400" />
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="lg:col-span-2 space-y-3">
               {loading ? (
-                <div className="py-20 text-center font-black text-slate-300 animate-pulse">Cargando Agenda...</div>
+                <div className="py-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-widest">Cargando Agenda...</div>
               ) : (
                 generateSlotsForAdmin().map(h => {
                   const apt = appointments.find(a => a.hora && a.hora.startsWith(h));
+                  const isBlocked = apt?.cliente === '🚫 BLOQUEADO';
+
                   return (
-                    <div key={h} className={`bg-white p-4 rounded-3xl border flex items-center justify-between transition-all ${apt ? 'border-slate-100 shadow-sm' : 'border-dashed border-slate-200 opacity-60'}`}>
+                    <div key={h} className={`bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex items-center justify-between transition-all ${apt && !isBlocked ? 'border-indigo-200' : ''}`}>
                       <div className="flex items-center gap-4">
-                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center font-black text-xs ${apt ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>{h}</div>
-                        {apt ? (
-                          <div>
-                            <p className="font-black text-sm uppercase">{apt.cliente}</p>
-                            <p className="text-[9px] text-slate-400 font-bold uppercase">{apt.servicio} • {apt.telefono}</p>
-                          </div>
-                        ) : (
-                          <p className="text-xs font-bold text-slate-300 uppercase italic">Horario Libre</p>
-                        )}
+                        {/* Cuadrito de la hora */}
+                        <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-black text-xs ${
+                          apt ? (isBlocked ? 'bg-slate-200 text-slate-500' : 'bg-indigo-600 text-white') : 'bg-slate-100 text-slate-400'
+                        }`}>
+                          {h}
+                        </div>
+
+                        <div>
+                          {apt ? (
+                            <>
+                              <p className={`font-black text-sm uppercase tracking-tight ${isBlocked ? 'text-slate-400 italic' : 'text-slate-900'}`}>
+                                {apt.cliente}
+                              </p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                {isBlocked ? 'HORARIO BLOQUEADO' : `${apt.servicio} • ${apt.telefono}`}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="font-black text-sm uppercase tracking-tight text-slate-300">
+                                {h} • DISPONIBLE
+                              </p>
+                              <p className="text-[10px] font-bold text-slate-200 uppercase tracking-widest">
+                                Libre para reserva
+                              </p>
+                            </>
+                          )}
+                        </div>
                       </div>
+
                       <div className="flex gap-2">
                         {apt ? (
                           <>
-                            <button onClick={() => window.open(`https://wa.me/${apt.telefono.replace(/\D/g,'')}`)} className="p-3 text-green-500 bg-green-50 rounded-xl hover:bg-green-500 hover:text-white transition-all"><MessageSquare size={16}/></button>
+                            {!isBlocked && (
+                              <button 
+                                onClick={() => window.open(`https://wa.me/${apt.telefono.replace(/\D/g,'')}`)}
+                                className="p-3 text-green-500 bg-green-50 rounded-xl hover:bg-green-500 hover:text-white transition-all shadow-sm"
+                              >
+                                <MessageSquare size={16}/>
+                              </button>
+                            )}
                             <button 
                               onClick={async () => {
-                                const conf = await Swal.fire({ title: '¿Eliminar turno?', icon: 'warning', showCancelButton: true });
-                                if (conf.isConfirmed) { await supabase.from('appointments').delete().eq('id', apt.id); fetchDailyAppointments(); }
-                              }} 
-                              className="p-3 text-red-400 bg-red-50 rounded-xl hover:bg-red-500 hover:text-white transition-all"
-                            ><Trash2 size={16}/></button>
+                                const res = await Swal.fire({
+                                  title: isBlocked ? '¿Habilitar horario?' : '¿Eliminar turno?',
+                                  icon: 'warning',
+                                  showCancelButton: true,
+                                  confirmButtonColor: '#4f46e5'
+                                });
+                                if (res.isConfirmed) {
+                                  await supabase.from('appointments').delete().eq('id', apt.id);
+                                  fetchDailyAppointments();
+                                }
+                              }}
+                              className="p-3 text-red-400 bg-red-50 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                            >
+                              <Trash2 size={16}/>
+                            </button>
                           </>
                         ) : (
-                          <button onClick={() => handleQuickBlock(h)} className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-black flex items-center gap-2"><Lock size={12}/> Bloquear</button>
+                          <button 
+                            onClick={() => handleQuickBlock(h)}
+                            className="bg-slate-800 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-black transition-all shadow-md"
+                          >
+                            Bloquear
+                          </button>
                         )}
                       </div>
                     </div>
@@ -260,10 +305,7 @@ export default function AdminPanel() {
             {/* GESTIÓN DE SERVICIOS */}
             <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100">
               <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h3 className="font-black text-xl italic">servicios.<span className="text-indigo-600">list</span></h3>
-                  <p className="text-[9px] font-black text-slate-400 uppercase">Precios y opciones</p>
-                </div>
+                <h3 className="font-black text-xl italic">servicios.<span className="text-indigo-600">list</span></h3>
                 <button onClick={handleAddService} className="bg-indigo-600 text-white p-4 rounded-2xl shadow-lg hover:scale-105 transition-all">
                   <Plus size={20}/>
                 </button>
@@ -287,38 +329,26 @@ export default function AdminPanel() {
             {/* CONFIGURACIÓN DE HORARIOS */}
             <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-100">
               <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h3 className="font-black text-xl italic">horarios.<span className="text-indigo-600">config</span></h3>
-                  <p className="text-[9px] font-black text-slate-400 uppercase">Turno Mañana y Tarde</p>
-                </div>
-                <button 
-                  onClick={saveAllChanges} 
-                  disabled={isSaving} 
-                  className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black flex items-center gap-3 shadow-lg hover:bg-indigo-700 transition-all"
-                >
+                <h3 className="font-black text-xl italic">horarios.<span className="text-indigo-600">config</span></h3>
+                <button onClick={saveAllChanges} disabled={isSaving} className="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black flex items-center gap-3 shadow-lg hover:bg-indigo-700 transition-all">
                   {isSaving ? <Activity className="animate-spin" size={14}/> : <Save size={14}/>} 
                   {isSaving ? 'Guardando...' : 'Guardar Todo'}
                 </button>
               </div>
-              
               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {horarios.map(h => (
                   <div key={h.dia} className={`p-6 rounded-[2rem] border transition-all ${h.activo ? 'bg-slate-50 border-slate-100' : 'opacity-40 grayscale'}`}>
                     <div className="flex justify-between items-center mb-4">
                       <span className="font-black text-sm uppercase tracking-widest">{h.dia}</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={h.activo} onChange={e => handleHorarioChange(h.dia, 'activo', e.target.checked)} />
-                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-indigo-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                      </label>
+                      <input type="checkbox" checked={h.activo} onChange={e => handleHorarioChange(h.dia, 'activo', e.target.checked)} className="h-5 w-5 accent-indigo-600 cursor-pointer" />
                     </div>
-                    
                     {h.activo && (
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mañana</p>
                           <div className="flex gap-2">
-                            <input type="time" className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 ring-indigo-50" value={h.apertura} onChange={e => handleHorarioChange(h.dia, 'apertura', e.target.value)} />
-                            <input type="time" className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 ring-indigo-50" value={h.cierre} onChange={e => handleHorarioChange(h.dia, 'cierre', e.target.value)} />
+                            <input type="time" className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold" value={h.apertura} onChange={e => handleHorarioChange(h.dia, 'apertura', e.target.value)} />
+                            <input type="time" className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold" value={h.cierre} onChange={e => handleHorarioChange(h.dia, 'cierre', e.target.value)} />
                           </div>
                         </div>
                         <div className="space-y-2">
