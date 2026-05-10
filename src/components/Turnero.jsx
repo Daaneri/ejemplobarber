@@ -5,7 +5,6 @@ import {
   MessageCircle, 
   Search, 
   MapPin, 
-  Clock,
   Trash2
 } from 'lucide-react';
 
@@ -57,7 +56,6 @@ export default function Turnero() {
     const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
     setServicios(srv || []);
     if (srv?.length > 0) setSelectedService(srv[0]);
-
     const { data: hor } = await supabase.from('configuracion_horarios').select('*');
     setConfigHorarios(hor || []);
   }
@@ -73,16 +71,13 @@ export default function Turnero() {
     const diaActual = getDayName(selectedDate);
     const config = configHorarios.find(h => h.dia === diaActual);
     if (!config || !config.activo) return [];
-    
     const slots = [];
     const addRange = (inicioStr, finStr) => {
       if (!inicioStr || !finStr) return;
       let [hInicio, mInicio] = inicioStr.split(':').map(Number);
       let [hFin, mFin] = finStr.split(':').map(Number);
-      
       let actual = hInicio * 60 + mInicio;
       const limite = hFin * 60 + mFin;
-
       while (actual < limite) {
         const h = Math.floor(actual / 60);
         const m = actual % 60;
@@ -90,10 +85,8 @@ export default function Turnero() {
         actual += 30; 
       }
     };
-
     addRange(config.apertura, config.cierre);
     addRange(config.apertura_tarde, config.cierre_tarde);
-
     return slots;
   };
 
@@ -114,7 +107,6 @@ export default function Turnero() {
       confirmButtonText: 'Sí, cancelar',
       cancelButtonText: 'No'
     });
-
     if (confirm.isConfirmed) {
       const { error } = await supabase.from('appointments').delete().eq('id', id);
       if (!error) {
@@ -127,14 +119,8 @@ export default function Turnero() {
 
   const handleReserve = async () => {
     if (!form.name || !form.phone || !selectedSlot) {
-      return Swal.fire({ 
-        title: '¡Faltan datos!', 
-        text: 'Por favor completá tu nombre, celu y elegí un horario.', 
-        icon: 'warning', 
-        confirmButtonColor: '#4f46e5' 
-      });
+      return Swal.fire({ title: '¡Faltan datos!', text: 'Por favor completá tu nombre, celu y elegí un horario.', icon: 'warning', confirmButtonColor: '#4f46e5' });
     }
-
     const { error } = await supabase.from('appointments').insert([{ 
       cliente: form.name, 
       telefono: form.phone.trim(), 
@@ -142,15 +128,8 @@ export default function Turnero() {
       hora: selectedSlot, 
       servicio: selectedService.nombre 
     }]);
-
     if (!error) {
-      Swal.fire({
-        title: '¡Reserva Confirmada!',
-        text: `Tu turno para ${selectedService.nombre} a las ${selectedSlot}hs fue agendado.`,
-        icon: 'success',
-        confirmButtonText: 'Genial',
-        confirmButtonColor: '#4f46e5'
-      });
+      Swal.fire({ title: '¡Reserva Confirmada!', text: `Tu turno para ${selectedService.nombre} a las ${selectedSlot}hs fue agendado.`, icon: 'success', confirmButtonText: 'Genial', confirmButtonColor: '#4f46e5' });
       setSelectedSlot(null);
       getAppointments();
     }
@@ -161,11 +140,10 @@ export default function Turnero() {
   return (
     <div className="min-h-screen bg-slate-100 p-2 md:p-10 font-sans text-slate-800">
       <div className="max-w-6xl mx-auto">
-        
         <header className="flex flex-col md:flex-row items-center justify-between mb-8 px-6">
           <div className="text-center md:text-left">
             <h1 className="text-5xl font-black text-slate-900 tracking-tighter lowercase italic">
-              ejemplo<span className="text-indigo-600">.barber </span>
+              ejemplo<span className="text-indigo-600">.barber</span>
             </h1>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">
               Villa Constitución • Santa Fe
@@ -178,7 +156,6 @@ export default function Turnero() {
         </header>
 
         <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[750px]">
-          
           <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50/50 border-r border-slate-100">
             <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-6">Paso 1: Servicio</h3>
             <div className="space-y-2 mb-8">
@@ -189,42 +166,30 @@ export default function Turnero() {
                 </button>
               ))}
             </div>
-
             <div className="space-y-3">
               <h3 className="font-black text-[11px] uppercase tracking-widest text-slate-900 mb-4">Paso 2: Tus Datos</h3>
               <input type="text" placeholder="Tu Nombre" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               <input type="tel" placeholder="Tu WhatsApp" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-200 outline-none focus:ring-2 ring-indigo-100" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-              
               <div className="bg-white border-2 border-dashed border-slate-200 p-4 rounded-2xl mt-4">
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Resumen</p>
                 <div className="text-2xl font-black text-indigo-600">${selectedService?.precio.toLocaleString()}</div>
-                <p className="text-[9px] text-slate-500 mt-1 italic font-medium">
-                  {selectedSlot ? `Horario: ${selectedSlot} hs` : "* Elegí un horario"}
-                </p>
+                <p className="text-[9px] text-slate-500 mt-1 italic font-medium">{selectedSlot ? `Horario: ${selectedSlot} hs` : "* Elegí un horario"}</p>
               </div>
-
-              <button 
-                onClick={handleReserve} 
-                disabled={!form.name || !form.phone || !selectedSlot}
-                className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all mt-4 ${
-                  (!form.name || !form.phone || !selectedSlot) 
-                  ? 'bg-slate-200 text-slate-400' 
-                  : 'bg-slate-900 text-white active:scale-95 hover:bg-black'
-                }`}
-              >
+              <button onClick={handleReserve} disabled={!form.name || !form.phone || !selectedSlot} className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all mt-4 ${(!form.name || !form.phone || !selectedSlot) ? 'bg-slate-200 text-slate-400' : 'bg-slate-900 text-white active:scale-95 hover:bg-black'}`}>
                 RESERVAR AHORA
               </button>
             </div>
           </div>
 
           <div className="w-full md:w-2/4 p-6 md:p-10">
-            <header className="flex justify-between items-center mb-8">
+            <header className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic">
                 {selectedDate.toLocaleDateString('es-ES', { month: 'long' })} <span className="text-indigo-600">{selectedDate.getFullYear()}</span>
               </h2>
             </header>
             
-            <div className="flex gap-2 mb-10 overflow-x-auto pb-4 scrollbar-hide">
+            {/* SELECTOR DE DÍAS */}
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
               {Array.from({ length: 14 }, (_, i) => {
                 const d = new Date();
                 d.setDate(d.getDate() + i);
@@ -237,9 +202,9 @@ export default function Turnero() {
               })}
             </div>
 
-            {/* BARRA DE PROGRESO UNIFICADA A VIOLETA */}
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-8">
-              <div className="h-full bg-indigo-600 w-1/2"></div>
+            {/* BARRA VIOLETA UNIFICADA (LA ÚNICA) */}
+            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-10">
+              <div className="h-full bg-indigo-600 w-1/3"></div>
             </div>
 
             <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
@@ -251,20 +216,7 @@ export default function Turnero() {
                 const apt = appointments.find(a => a.hora && a.hora.startsWith(h));
                 const isPast = isTimeSlotPast(h);
                 return (
-                  <button 
-                    key={h} 
-                    disabled={!!apt || isPast} 
-                    onClick={() => setSelectedSlot(h)} 
-                    className={`py-4 rounded-xl text-xs font-black transition-all border ${
-                      apt 
-                        ? 'bg-red-50 text-red-200 border-red-50 cursor-not-allowed' 
-                        : isPast 
-                          ? 'bg-slate-50 text-slate-200 border-transparent cursor-not-allowed' 
-                          : selectedSlot === h 
-                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg scale-105' 
-                            : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300'
-                    }`}
-                  >
+                  <button key={h} disabled={!!apt || isPast} onClick={() => setSelectedSlot(h)} className={`py-4 rounded-xl text-xs font-black transition-all border ${apt ? 'bg-red-50 text-red-200 border-red-50 cursor-not-allowed' : isPast ? 'bg-slate-50 text-slate-200 border-transparent cursor-not-allowed' : selectedSlot === h ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg scale-105' : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:border-indigo-300'}`}>
                     {h}
                   </button>
                 );
@@ -277,31 +229,19 @@ export default function Turnero() {
               <a href="https://wa.me/543400000000" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-3 w-full bg-green-500 text-white font-black uppercase text-[10px] py-5 rounded-2xl shadow-lg hover:bg-green-600 transition-all">
                 <MessageCircle className="w-5 h-5" /> WhatsApp Barbería
               </a>
-              
-              <div className="mt-6 h-[180px] w-full rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner relative group">
-                <iframe 
-                  title="mapa-villa"
-                  width="100%" 
-                  height="100%" 
-                  style={{ border: 0 }} 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3328.187313075253!2d-60.3298642!3d-33.2223456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c6660600001%3A0x6000000000000000!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1700000000000!5m2!1ses-419!2sar" 
-                  allowFullScreen="" 
-                  loading="lazy"
-                  className="grayscale group-hover:grayscale-0 transition-all duration-500"
-                ></iframe>
+              <div className="mt-6 h-[180px] w-full rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner relative">
+                <iframe title="mapa" width="100%" height="100%" style={{ border: 0 }} src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3334.6!2d-60.3!3d-33.2!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzPCsDEyJzAwLjAiUyA2MMKwMTgnMDAuMCJX!5e0!3m2!1ses!2sar!4v1620000000000!5m2!1ses!2sar" allowFullScreen="" loading="lazy" className="grayscale"></iframe>
               </div>
               <div className="mt-4 flex items-start gap-3 text-slate-400 px-2">
                 <MapPin className="w-4 h-4 text-indigo-600 mt-1" />
                 <p className="text-[10px] font-bold leading-relaxed uppercase">Av. San Martín 1234<br/>Villa Constitución, SF</p>
               </div>
             </div>
-
             <div className="flex-1 bg-slate-50 p-6 rounded-t-[3rem] border-t border-slate-100 mt-4">
               <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-900 mb-4 flex items-center gap-2">
                 <Search className="w-3 h-3 text-indigo-600" /> Mis Reservas
               </h3>
               <input type="tel" placeholder="Tu WhatsApp..." className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-[10px] outline-none focus:ring-2 ring-indigo-100 mb-4 font-bold" value={searchPhone} onChange={(e) => { setSearchPhone(e.target.value); fetchMyAppointments(e.target.value); }} />
-              
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                 {myAppointments.map(apt => (
                   <div key={apt.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center group">
@@ -310,10 +250,7 @@ export default function Turnero() {
                       <p className="font-black text-sm text-slate-900">{apt.hora.substring(0,5)} HS</p>
                       <p className="text-[9px] font-bold text-slate-400 uppercase">{apt.servicio}</p>
                     </div>
-                    <button 
-                      onClick={() => handleCancelAppointment(apt.id)}
-                      className="p-2 text-slate-300 hover:text-red-500 transition-colors"
-                    >
+                    <button onClick={() => handleCancelAppointment(apt.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -322,25 +259,6 @@ export default function Turnero() {
             </div>
           </div>
         </div>
-
-        <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 px-6 text-center md:text-left">
-          <div>
-            <h4 className="text-xl font-black text-slate-900 lowercase italic tracking-tighter">
-              ejemplo<span className="text-indigo-600">.barber</span>
-            </h4>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-              Turnos Online • Villa Constitución
-            </p>
-          </div>
-          <div className="text-center md:text-right">
-            <p className="text-[10px] text-slate-400 font-medium tracking-tight">
-              © 2026 — ejemplo.barber
-            </p>
-            <span className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic inline-block">
-              EliteWar Soft
-            </span>
-          </div>
-        </footer>
       </div>
     </div>
   );
