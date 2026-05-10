@@ -158,53 +158,35 @@ export default function AdminPanel() {
     }
   };
 
- if (!isAuthenticated) {
+if (!isAuthenticated) {
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Círculos de fondo para el efecto de profundidad */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px]"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-80 h-80 bg-slate-500/10 rounded-full blur-[100px]"></div>
-
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <form 
         onSubmit={handleLogin} 
-        className="relative backdrop-blur-xl bg-white/80 p-12 rounded-[3.5rem] shadow-[0_32px_64px_-15px_rgba(0,0,0,0.2)] max-w-md w-full text-center border border-white/50"
+        className="bg-white p-10 rounded-[2.5rem] shadow-xl max-w-md w-full text-center border border-slate-200"
       >
-        {/* Icono Flotante con Neumorfismo suave */}
-        <div className="w-24 h-24 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mx-auto mb-8 text-indigo-600 border border-slate-50">
-          <Lock size={40} strokeWidth={1.5} />
-        </div>
-
-        <div className="mb-10">
-          <h2 className="text-4xl font-black italic text-slate-900 tracking-tighter leading-none">
+        <div className="mb-8">
+          <h2 className="text-3xl font-black italic text-slate-900 tracking-tighter">
             admin.<span className="text-indigo-600">barber</span>
           </h2>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-3 opacity-60">
-            Panel de Control Privado
-          </p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Panel de Control</p>
         </div>
 
         <div className="space-y-4">
-          <div className="relative group">
+          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+            <Lock className="mx-auto mb-3 text-slate-300" size={24} />
             <input 
               type="password" 
-              placeholder="••••••••" 
-              className="w-full p-6 bg-slate-100/50 rounded-3xl border border-transparent mb-2 text-center text-xl font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white focus:border-indigo-100 transition-all duration-300" 
+              placeholder="Clave Maestra" 
+              className="w-full bg-transparent text-center text-lg font-bold outline-none" 
               value={password} 
               onChange={e => setPassword(e.target.value)} 
             />
-            <p className="text-[9px] font-black text-slate-400 uppercase italic">Ingresá tu Clave Maestra</p>
           </div>
 
-          <button className="w-full bg-slate-900 text-white font-black py-6 rounded-3xl hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 uppercase tracking-[0.2em] text-xs shadow-2xl shadow-indigo-200/50 flex items-center justify-center gap-3">
-            Acceder al Dashboard
+          <button className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 uppercase text-xs tracking-widest">
+            Entrar
           </button>
-        </div>
-
-        {/* Decoración Minimalista Inferior */}
-        <div className="mt-12 flex justify-center gap-1">
-          <div className="w-1 h-1 rounded-full bg-slate-200"></div>
-          <div className="w-8 h-1 rounded-full bg-indigo-600"></div>
-          <div className="w-1 h-1 rounded-full bg-slate-200"></div>
         </div>
       </form>
     </div>
