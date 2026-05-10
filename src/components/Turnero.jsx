@@ -7,7 +7,8 @@ import {
   MapPin, 
   Clock,
   CheckCircle,
-  Smartphone
+  Smartphone,
+  Trash2
 } from 'lucide-react';
 
 export default function Turnero() {
@@ -90,6 +91,29 @@ export default function Turnero() {
     const { data } = await supabase.from('appointments').select('*').eq('telefono', phone.trim()).order('fecha', { ascending: false });
     setMyAppointments(data || []);
   }
+
+  // --- FUNCIÓN PARA CANCELAR TURNO ---
+  const handleCancelAppointment = async (id) => {
+    const confirm = await Swal.fire({
+      title: '¿Anular reserva?',
+      text: "El horario quedará libre para otra persona.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No'
+    });
+
+    if (confirm.isConfirmed) {
+      const { error } = await supabase.from('appointments').delete().eq('id', id);
+      if (!error) {
+        Swal.fire('Cancelado', 'Tu turno fue eliminado.', 'success');
+        fetchMyAppointments(searchPhone); // Refresca tus reservas
+        getAppointments(); // Libera el slot en el calendario
+      }
+    }
+  };
 
   const handleReserve = async () => {
     if (!form.name || !form.phone || !selectedSlot) {
@@ -227,7 +251,6 @@ export default function Turnero() {
                 <MessageCircle className="w-5 h-5" /> WhatsApp Barbería
               </a>
               
-              {/* MAPA REAL VILLA CONSTITUCIÓN */}
               <div className="mt-6 h-[180px] w-full rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner relative group">
                 <iframe 
                   title="mapa-villa"
@@ -254,12 +277,19 @@ export default function Turnero() {
               
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {myAppointments.map(apt => (
-                  <div key={apt.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <p className="text-[8px] font-black text-indigo-500 uppercase mb-1">{apt.fecha.split('-').reverse().join('/')}</p>
-                    <div className="flex justify-between items-end">
+                  <div key={apt.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center group">
+                    <div>
+                      <p className="text-[8px] font-black text-indigo-500 uppercase mb-1">{apt.fecha.split('-').reverse().join('/')}</p>
                       <p className="font-black text-sm text-slate-900">{apt.hora.substring(0,5)} HS</p>
                       <p className="text-[9px] font-bold text-slate-400 uppercase">{apt.servicio}</p>
                     </div>
+                    {/* BOTÓN DE CANCELAR */}
+                    <button 
+                      onClick={() => handleCancelAppointment(apt.id)}
+                      className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -267,7 +297,6 @@ export default function Turnero() {
           </div>
         </div>
 
-        {/* FOOTER ACTUALIZADO */}
         <footer className="mt-12 pb-8 border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 px-6 text-center md:text-left">
           <div>
             <h4 className="text-xl font-black text-slate-900 lowercase italic tracking-tighter">
@@ -281,7 +310,6 @@ export default function Turnero() {
             <p className="text-[10px] text-slate-400 font-medium tracking-tight">
               © 2026 — ejemplo.barber
             </p>
-            {/* CAMBIO AQUÍ: Etiqueta span y nuevo texto estático */}
             <span className="text-[9px] text-slate-900 font-black uppercase tracking-tighter mt-1 italic inline-block">
               EliteWar Soft
             </span>
