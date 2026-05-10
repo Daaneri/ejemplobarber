@@ -165,7 +165,7 @@ export default function Turnero() {
         <header className="flex flex-col md:flex-row items-center justify-between mb-8 px-6">
           <div className="text-center md:text-left">
             <h1 className="text-5xl font-black text-slate-900 tracking-tighter lowercase italic">
-              ejemplo<span className="text-indigo-600">.barber</span>
+              ejemplo<span className="text-indigo-600">.barber </span>
             </h1>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">
               Villa Constitución • Santa Fe
@@ -237,6 +237,11 @@ export default function Turnero() {
               })}
             </div>
 
+            {/* BARRA DE PROGRESO UNIFICADA A VIOLETA */}
+            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-8">
+              <div className="h-full bg-indigo-600 w-1/2"></div>
+            </div>
+
             <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
               {currentSlots.length === 0 ? (
                 <div className="col-span-full py-10 text-center bg-red-50 rounded-[2rem] border border-red-100">
@@ -279,7 +284,7 @@ export default function Turnero() {
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13346.885141675203!2d-60.33446453982855!3d-33.247659553556014!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c66d1933c9d%3A0xc3f1a070f86236b2!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1714900000000!5m2!1ses-419!2sar" 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3328.187313075253!2d-60.3298642!3d-33.2223456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b76c6660600001%3A0x6000000000000000!2sVilla%20Constituci%C3%B3n%2C%20Santa%20Fe!5e0!3m2!1ses-419!2sar!4v1700000000000!5m2!1ses-419!2sar" 
                   allowFullScreen="" 
                   loading="lazy"
                   className="grayscale group-hover:grayscale-0 transition-all duration-500"
