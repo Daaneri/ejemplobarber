@@ -5,7 +5,10 @@ import {
   MessageCircle, 
   Search, 
   MapPin, 
-  Trash2
+  Trash2,
+  Instagram,
+  Facebook,
+  Clock
 } from 'lucide-react';
 
 export default function Turnero() {
@@ -42,13 +45,8 @@ export default function Turnero() {
     return now.getTime() > (slotDate.getTime() - (30 * 60 * 1000));
   };
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  useEffect(() => {
-    getAppointments();
-  }, [selectedDate]);
+  useEffect(() => { fetchInitialData(); }, []);
+  useEffect(() => { getAppointments(); }, [selectedDate]);
 
   async function fetchInitialData() {
     const { data: srv } = await supabase.from('servicios').select('*').order('orden', { ascending: true });
@@ -90,7 +88,9 @@ export default function Turnero() {
   }
 
   const handleReserve = async () => {
-    if (!form.name || !form.phone || !selectedSlot) return;
+    if (!form.name || !form.phone || !selectedSlot) {
+        return Swal.fire({ title: '¡Faltan datos!', icon: 'warning', confirmButtonColor: '#4f46e5' });
+    }
     const { error } = await supabase.from('appointments').insert([{ 
       cliente: form.name, 
       telefono: form.phone.trim(), 
@@ -99,7 +99,7 @@ export default function Turnero() {
       servicio: selectedService.nombre 
     }]);
     if (!error) {
-      Swal.fire({ title: '¡Listo!', icon: 'success', confirmButtonColor: '#4f46e5' });
+      Swal.fire({ title: '¡Reserva Confirmada!', icon: 'success', confirmButtonColor: '#10b981' });
       setSelectedSlot(null);
       getAppointments();
     }
@@ -108,63 +108,79 @@ export default function Turnero() {
   const currentSlots = generateSlots();
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 md:p-10 font-sans">
-      {/* ESTILO PARA LA BARRA DE DESPLAZAMIENTO VIOLETA */}
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-950">
       <style>{`
-        .barra-dias::-webkit-scrollbar { height: 8px; }
-        .barra-dias::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .barra-dias::-webkit-scrollbar { height: 6px; }
+        .barra-dias::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 10px; }
         .barra-dias::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
       `}</style>
 
-      <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-8 px-4">
-          <h1 className="text-4xl font-black text-slate-900 italic lowercase">
+      <div className="max-w-6xl mx-auto p-2 md:p-10">
+        <header className="flex justify-between items-center mb-8 px-6">
+          <h1 className="text-4xl font-black text-black tracking-tighter lowercase italic">
             ejemplo<span className="text-indigo-600">.barber</span>
           </h1>
+          <div className="bg-white px-3 py-1 rounded-full border border-slate-300 flex items-center gap-2 shadow-sm">
+            <div className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></div>
+            <span className="text-[10px] font-black uppercase text-black">Sistema Activo</span>
+          </div>
         </header>
 
-        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[700px]">
-          {/* Paso 1 y 2 */}
-          <div className="w-full md:w-1/4 p-8 bg-slate-50/50 border-r border-slate-100">
-            <h3 className="text-[10px] font-black uppercase tracking-widest mb-6 italic">Paso 1: Servicio</h3>
+        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[750px]">
+          {/* COLUMNA IZQUIERDA */}
+          <div className="w-full md:w-1/4 p-8 flex flex-col bg-slate-50 border-r border-slate-200">
+            <h3 className="font-black text-[11px] uppercase tracking-widest text-black mb-6 italic">Paso 1: Servicio</h3>
             <div className="space-y-2 mb-8">
               {servicios.map(s => (
-                <button key={s.id} onClick={() => setSelectedService(s)} className={`w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${selectedService?.id === s.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200'}`}>
-                  <span className="text-xs font-bold">{s.nombre}</span>
-                  <span className="text-[10px] font-bold opacity-80">${s.precio}</span>
+                <button key={s.id} onClick={() => setSelectedService(s)} className={`w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${selectedService?.id === s.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-300 text-black hover:border-indigo-400'}`}>
+                  <span className="text-xs font-black">{s.nombre}</span>
+                  <span className="text-[10px] font-black opacity-90">${s.precio}</span>
                 </button>
               ))}
             </div>
-            <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 italic">Paso 2: Tus Datos</h3>
-            <input type="text" placeholder="Nombre" className="w-full p-4 rounded-2xl border text-xs mb-2 outline-none focus:ring-2 ring-indigo-100" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-            <input type="tel" placeholder="WhatsApp" className="w-full p-4 rounded-2xl border text-xs outline-none focus:ring-2 ring-indigo-100" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-            <button onClick={handleReserve} className="w-full mt-6 bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-black">RESERVAR</button>
+
+            <h3 className="font-black text-[11px] uppercase tracking-widest text-black mb-4 italic">Paso 2: Tus Datos</h3>
+            <div className="space-y-2">
+                <input type="text" placeholder="Tu Nombre" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-400 text-black outline-none focus:ring-2 ring-indigo-100 placeholder:text-slate-500 font-bold" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                <input type="tel" placeholder="WhatsApp" className="w-full bg-white p-4 rounded-2xl text-xs border border-slate-400 text-black outline-none focus:ring-2 ring-indigo-100 placeholder:text-slate-500 font-bold" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+            </div>
+
+            <div className="bg-white border-2 border-dashed border-slate-300 p-4 rounded-2xl mt-6">
+                <p className="text-[10px] font-black text-slate-500 uppercase">Resumen</p>
+                <div className="text-2xl font-black text-black">${selectedService?.precio || 0}</div>
+                <p className="text-[9px] text-indigo-700 font-black italic mt-1">{selectedSlot ? `Horario: ${selectedSlot} hs` : "* Elegí un horario"}</p>
+            </div>
+
+            <button onClick={handleReserve} className="w-full font-black py-4 rounded-2xl shadow-xl transition-all mt-4 bg-black text-white hover:bg-slate-900 active:scale-95">
+                RESERVAR TURNO
+            </button>
           </div>
 
-          {/* Columna Central: Turnos */}
+          {/* COLUMNA CENTRAL */}
           <div className="w-full md:w-2/4 p-8">
-            <h2 className="text-2xl font-black mb-6 uppercase italic tracking-tighter">
-              {selectedDate.toLocaleDateString('es-ES', { month: 'long' })} <span className="text-indigo-600">{selectedDate.getFullYear()}</span>
+            <h2 className="text-2xl font-black text-black tracking-tight uppercase italic mb-6">
+                {selectedDate.toLocaleDateString('es-ES', { month: 'long' })} <span className="text-indigo-600">{selectedDate.getFullYear()}</span>
             </h2>
             
-            {/* BARRA PARA CORRER DÍAS (VIOLETA) */}
-            <div className="flex gap-2 overflow-x-auto pb-4 mb-10 barra-dias">
-              {Array.from({ length: 21 }, (_, i) => {
+            <div className="flex gap-2 mb-8 overflow-x-auto pb-4 barra-dias">
+              {Array.from({ length: 14 }, (_, i) => {
                 const d = new Date(); d.setDate(d.getDate() + i);
                 return (
-                  <button key={i} onClick={() => setSelectedDate(d)} className={`min-w-[60px] py-5 rounded-2xl text-xs flex flex-col items-center transition-all ${getLocalDateString(selectedDate) === getLocalDateString(d) ? 'bg-slate-900 text-white shadow-xl scale-105' : 'bg-white border hover:bg-slate-50'}`}>
-                    <span className="opacity-60 mb-1 font-bold uppercase text-[8px]">{getDayName(d).substring(0,3)}</span>
+                  <button key={i} onClick={() => setSelectedDate(d)} className={`min-w-[60px] py-4 rounded-2xl text-sm flex flex-col items-center transition-all ${getLocalDateString(selectedDate) === getLocalDateString(d) ? 'bg-black text-white shadow-xl scale-105' : 'bg-white text-black border border-slate-300 hover:bg-slate-50'}`}>
+                    <span className="text-[8px] font-black uppercase mb-1 opacity-70">{getDayName(d).substring(0,3)}</span>
                     <span className="font-black text-base">{d.getDate()}</span>
                   </button>
                 );
               })}
             </div>
 
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 italic">Horarios Disponibles</h3>
-
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-black mb-4 italic flex items-center gap-2">
+                <Clock size={12} className="text-indigo-600" /> Horarios Disponibles
+            </h3>
+            
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {currentSlots.length === 0 ? (
-                <div className="col-span-full py-10 text-center bg-red-50 rounded-2xl border border-red-100 text-red-400 font-bold uppercase text-xs tracking-widest">Cerrado</div>
+                <div className="col-span-full py-10 text-center bg-red-50 rounded-2xl border border-red-200 text-red-600 font-black uppercase text-xs italic">Cerrado</div>
               ) : currentSlots.map(h => {
                 const apt = appointments.find(a => a.hora && a.hora.startsWith(h));
                 const isPast = isTimeSlotPast(h);
@@ -174,10 +190,10 @@ export default function Turnero() {
                     disabled={!!apt || isPast} 
                     onClick={() => setSelectedSlot(h)} 
                     className={`py-5 rounded-2xl text-base font-black transition-all border ${
-                      apt ? 'bg-red-50 text-red-200 border-red-50 cursor-not-allowed' :
-                      isPast ? 'bg-slate-50 text-slate-200 border-transparent cursor-not-allowed' :
-                      selectedSlot === h ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg scale-105' :
-                      'bg-emerald-50 text-emerald-600 border-emerald-100 hover:border-emerald-300'
+                      apt ? 'bg-red-50 text-red-300 border-red-100 cursor-not-allowed opacity-50' :
+                      isPast ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed' :
+                      selectedSlot === h ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' :
+                      'bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-400'
                     }`}
                   >
                     {h}
@@ -187,28 +203,61 @@ export default function Turnero() {
             </div>
           </div>
 
-          {/* Columna Derecha */}
-          <div className="w-full md:w-1/4 p-6 border-l border-slate-100 bg-white">
-              <a href="#" className="flex items-center justify-center gap-2 w-full bg-green-500 text-white font-black text-[10px] py-5 rounded-2xl mb-6 uppercase shadow-lg shadow-green-100">
-                <MessageCircle size={18} /> WhatsApp Barbería
-              </a>
-              <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 italic">
-                <Search size={12} className="text-indigo-600" /> Mis Reservas
-              </h3>
-              <input type="tel" placeholder="Tu Celular..." className="w-full p-4 rounded-2xl border text-[10px] font-bold mb-4 outline-none focus:ring-2 ring-indigo-100" value={searchPhone} onChange={(e) => { setSearchPhone(e.target.value); fetchMyAppointments(e.target.value); }} />
-              <div className="space-y-2 overflow-y-auto max-h-[300px]">
-                {myAppointments.map(apt => (
-                  <div key={apt.id} className="p-4 border border-slate-100 rounded-2xl flex justify-between items-center bg-slate-50/50">
-                    <div>
-                      <p className="text-[8px] font-black text-indigo-500 uppercase">{apt.fecha}</p>
-                      <p className="font-black text-sm text-slate-900">{apt.hora.substring(0,5)} HS</p>
+          {/* COLUMNA DERECHA */}
+          <div className="w-full md:w-1/4 flex flex-col border-l border-slate-200 bg-white">
+              <div className="p-6">
+                <a href="https://wa.me/543400000000" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full bg-green-600 text-white font-black text-[10px] py-5 rounded-2xl mb-6 uppercase shadow-lg hover:bg-green-700 transition-all">
+                    <MessageCircle size={18} /> WhatsApp Barbería
+                </a>
+
+                <div className="h-[180px] w-full rounded-[2rem] overflow-hidden shadow-inner border border-slate-200 grayscale mb-4">
+                    <iframe title="map" width="100%" height="100%" frameBorder="0" src="http://googleusercontent.com/maps.google.com/6" allowFullScreen="" loading="lazy"></iframe>
+                </div>
+
+                <div className="flex items-start gap-3 text-black px-2 mb-6 font-bold">
+                    <MapPin className="w-5 h-5 text-indigo-600 mt-1 shrink-0" />
+                    <p className="text-[10px] leading-relaxed uppercase">Av. San Martín 1234<br/>Villa Constitución, SF</p>
+                </div>
+              </div>
+
+              <div className="flex-1 bg-slate-50 p-6 rounded-t-[3rem] border-t border-slate-200">
+                <h3 className="font-black text-[10px] uppercase tracking-widest text-black mb-4 flex items-center gap-2 italic">
+                    <Search size={12} className="text-indigo-600" /> Buscar mi turno
+                </h3>
+                <input type="tel" placeholder="Tu Celular..." className="w-full bg-white border border-slate-400 p-4 rounded-2xl text-[10px] outline-none focus:ring-2 ring-indigo-100 mb-4 font-black shadow-sm" value={searchPhone} onChange={(e) => { setSearchPhone(e.target.value); fetchMyAppointments(e.target.value); }} />
+                
+                <div className="space-y-2 overflow-y-auto max-h-[220px] pr-1">
+                    {myAppointments.map(apt => (
+                    <div key={apt.id} className="p-4 bg-white border border-slate-300 rounded-2xl flex justify-between items-center shadow-sm">
+                        <div>
+                        <p className="text-[8px] font-black text-indigo-600 uppercase">{apt.fecha.split('-').reverse().join('/')}</p>
+                        <p className="font-black text-sm text-black">{apt.hora.substring(0,5)} HS</p>
+                        <p className="text-[9px] font-black text-slate-500 uppercase">{apt.servicio}</p>
+                        </div>
+                        <Trash2 size={16} className="text-slate-400 hover:text-red-600 cursor-pointer transition-colors" onClick={() => {
+                             // Lógica de borrado igual a la anterior
+                        }} />
                     </div>
-                    <Trash2 size={16} className="text-slate-300 hover:text-red-500 cursor-pointer transition-colors" />
-                  </div>
-                ))}
+                    ))}
+                </div>
               </div>
           </div>
         </div>
+
+        {/* FOOTER */}
+        <footer className="mt-12 mb-8 px-6 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-slate-300 pt-8">
+            <div className="text-center md:text-left">
+                <h4 className="text-lg font-black text-black lowercase italic mb-1">ejemplo<span className="text-indigo-600">.barber</span></h4>
+                <p className="text-[10px] font-black uppercase text-slate-600">© 2026 Villa Constitución • Santa Fe</p>
+            </div>
+            <div className="flex gap-4">
+                <a href="#" className="p-3 bg-white rounded-2xl shadow-sm border border-slate-300 text-black hover:text-indigo-600 transition-all"><Instagram size={18} /></a>
+                <a href="#" className="p-3 bg-white rounded-2xl shadow-sm border border-slate-300 text-black hover:text-indigo-600 transition-all"><Facebook size={18} /></a>
+            </div>
+            <div className="text-center md:text-right">
+                <p className="text-[9px] font-black uppercase text-black italic">Developed by Daaneri</p>
+            </div>
+        </footer>
       </div>
     </div>
   );
